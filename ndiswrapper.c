@@ -1399,25 +1399,18 @@ void unisort(char tab[][STRBUFFER], int *last) {
     int i, j;
     int change = 1;
     char tmp[STRBUFFER];
-    char t1[STRBUFFER], t2[STRBUFFER];
 
     while (change) {
         change = 0;
         for (i = 0; i < *last - 1; i++) {
-            strcpy(t1, tab[i]);
-            lc(t1);
             for (j = 0; j < i; j++) {
-                strcpy(t2, tab[j]);
-                lc(t2);
-                if (strcmp(t1, t2) == 0) {
+                if (!strcasecmp(tab[i], tab[j])) {
                     *last = *last - 1;
                     strcpy(tab[i], tab[*last]);
                     change = 1;
                 }
             }
-            strcpy(t2, tab[i+1]);
-            lc(t2);
-            if (strcmp(t2, t1) < 0) {
+            if (strcasecmp(tab[i+1], tab[i]) < 0) {
                 strcpy(tmp, tab[i]);
                 strcpy(tab[i], tab[i+1]);
                 strcpy(tab[i+1], tmp);
