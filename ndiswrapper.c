@@ -1,0 +1,1441 @@
+/*
+ * Ndiswrapper manager, initially writed for GeeXboX
+ * Copyright (C) 2006 Mathieu Schroeter <mathieu.schroeter@gamesover.ch>
+ *
+ * Based on the original ndiswrapper-1.21 Perl script
+ *  by Pontus Fuchs and Giridhar Pemmasani, 2005
+ *
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <fcntl.h>
+#include <unistd.h>     /* open close read write symlink mkdir rmdir */
+#include <ctype.h>      /* toupper tolower */
+#include <sys/types.h>  /* size_t */
+#include <sys/stat.h>   /* stat */
+#include <dirent.h>     /* opendir closedir readdir */
+#include <regex.h>      /* regexec regfree regcomp */
+#include <string.h>     /* strcat strcpy strcmp strlen strncpy */
+
+#include "ndiswrapper.h"
+
+/* global variables */
+struct DEF_SECTION sections[STRBUFFER];
+unsigned int nb_sections = 0;
+
+struct DEF_STRVER strings[STRBUFFER];
+struct DEF_STRVER version[STRBUFFER];
+struct DEF_STRVER fuzzlist[STRBUFFER];
+struct DEF_STRVER buslist[STRBUFFER];
+unsigned int nb_strings = 0;
+unsigned int nb_version = 0;
+unsigned int nb_fuzzlist = 0;
+unsigned int nb_buslist = 0;
+
+struct DEF_FIXLIST param_fixlist[4];
+
+char driver_name[STRBUFFER];
+char instdir[STRBUFFER];
+char classguid[STRBUFFER];
+int bus;
+
+
+int main(int argc, char **argv) {
+    /* param_fixlist initialisation */
+    strcpy(param_fixlist[0].n, "EnableRadio|0");
+    strcpy(param_fixlist[0].m, "EnableRadio|1");
+    strcpy(param_fixlist[1].n, "IBSSGMode|0");
+    strcpy(param_fixlist[1].m, "IBSSGMode|2");
+    strcpy(param_fixlist[2].n, "PrivacyMode|0");
+    strcpy(param_fixlist[2].m, "PrivacyMode|2");
+    strcpy(param_fixlist[3].n, "AdhocGMode|1");
+    strcpy(param_fixlist[3].m, "AdhocGMode|0");
+
+    /* main initialisation */
+    int res = 0;
+
+    /* arguments */
+    if (argc < 2) {
+        usage();
+        return res;
+    }
+
+    if (strcmp(argv[1], "-i") == 0 && argc == 3)
+        res = install(argv[2]);
+/*
+    else if (strcmp(argv[1], "-d") == 0 && argc == 4)
+        res = devid_driver(argv[2], argv[3]);
+*/
+    else if (strcmp(argv[1], "-e") == 0 && argc == 3)
+        res = remove(argv[2]);
+/*
+    else if (strcmp(argv[1], "-l") == 0 && argc == 2)
+        res = list();
+    else if (strcmp(argv[1], "-m") == 0 && argc == 2)
+        res = modalias();
+    else if (strcmp(argv[1], "-v") == 0 && argc == 2) {
+        printf("utils ");
+        system("/sbin/loadndisdriver -v");
+        printf("driver ");
+        system("modinfo ndiswrapper | grep -E '^version|^vermagic'");
+        res = 0;
+    }
+    else if (strcmp(argv[1], "-da") == 0 && argc == 2)
+        res = genmoddevconf(0);
+    else if (strcmp(argv[1], "-di") == 0 && argc == 2)
+        res = genmoddevconf(1);
+*/
+    else {
+        usage();
+    }
+    return res;
+}
+
+/*
+ * INF installation
+ * ----------------
+ * - install         : install driver described by INF
+ * - isInstalled     : test if the driver is already installed
+ * - loadinf         : load INF in memory
+ * - initStrings     : init "strings" section
+ * - processPCIFuzz  : create symbolic link
+ * - addPCIFuzzEntry : add device in the fuzzlist
+ * - addReg          : add registry to the conf
+ *
+ */
+
+int install(const char *inf) {
+    char install_dir[STRBUFFER];
+    char dst[STRBUFFER];
+    DIR *dir;
+
+    if (!file_exists(inf)) {
+        printf("Unable to locate %s\n", inf);
+        return -1;
+    }
+
+    char *start, *end;
+    end = strstr(inf,".inf");
+    if (!end)
+        end=strstr(inf,".INF");
+    start = strrchr(inf,'/');
+    strncpy(driver_name, start+1, end-start-1);
+    driver_name[end-start] = '\0';
+    lc(driver_name);
+    strncpy(instdir, inf, start-inf);
+    instdir[start-inf+1] = '\0';
+
+    if (isInstalled(driver_name)) {
+        printf("%s is already installed. Use -e to remove it\n", driver_name);
+        return -1;
+    }
+    if ((dir = opendir(CONFDIR)) != NULL)
+        closedir(dir);
+    else
+        mkdir(CONFDIR, 0777);
+
+    printf("Installing %s\n", driver_name);
+    strcpy(install_dir, CONFDIR);
+    strcat(install_dir, "/");
+    strcat(install_dir, driver_name);
+    if (mkdir(install_dir, 0777) == -1) {
+        printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
+        return -1;
+    }
+
+    loadinf(inf);
+    initStrings();
+    parseVersion();
+    strcpy(dst, install_dir);
+    strcat(dst, "/");
+    strcat(dst, driver_name);
+    strcat(dst, ".inf");
+    if (!copy(inf, dst, 0644)) {
+        printf("couldn't copy %s\n", inf);
+        return -1;
+    }
+    processPCIFuzz();
+    return 0;
+}
+
+int isInstalled(const char *name) {
+    int installed = 0;
+    char f_path[STRBUFFER];
+    DIR *d;
+    struct dirent *dp;
+    struct stat st;
+
+    stat(CONFDIR, &st);
+    if (!S_ISDIR(st.st_mode))
+        return 0;
+
+    d = opendir(CONFDIR);
+    while ((dp = readdir(d))) {
+        strcpy(f_path, CONFDIR);
+        strcat(f_path, "/");
+        strcat(f_path, dp->d_name);
+        stat(f_path, &st);
+        if (S_ISDIR(st.st_mode) && !strcmp(name, dp->d_name)) {
+            installed = 1;
+            break;
+        }
+    }
+    closedir(d);
+    return installed;
+}
+
+int loadinf(const char *filename) {
+    int i = 0;
+    char s[DATABUFFER];
+    char val[STRBUFFER];
+    struct DEF_SECTION section;
+    struct DEF_SECTION new_section;
+    FILE *f;
+
+    new_section.name[0] = '\0';
+    new_section.data[0] = '\0';
+
+    if ((f = fopen(filename, "r")) == NULL)
+        return -1;
+
+    strcpy(section.name, "none");
+    while (fgets(s, FGETSBUFFER, f)) {
+        /* Convert from unicode */
+        //strcpy(s, regex(s, "s/\xff\xfe//")); // FIXME
+        //strcpy(s, regex(s, "s/\0//")); // FIXME
+
+        char *start, *end;
+        start = strchr(s,'[');
+        end = strchr(s,']');
+        if (start && end) {
+            strncpy(val, start+1, end-start-1);
+            val[end-start-1] = '\0';
+            sections[i++] = section;
+            nb_sections++;
+            section = new_section;
+            strcpy(section.name, val);
+        }
+        else
+            strcat(section.data, s);
+    }
+    sections[i++] = section;
+    nb_sections++;
+    fclose(f);
+    return 1;
+}
+
+int initStrings(void) {
+    int i = 0;
+    int j;
+    char lines[512][STRBUFFER];
+    char keyval[2][STRBUFFER];
+    char ps[1][STRBUFFER];
+    char tok[DATABUFFER];
+    char *tmp;
+    struct DEF_SECTION *s = NULL;
+
+    tmp = malloc(STRBUFFER);
+
+    s = getSection("strings");
+    if (s == NULL)
+        return -1;
+
+    // Split
+    strcpy(tok, s->data);
+    strcpy(lines[i], strtok(tok, "\n"));
+    while ((tmp = strtok(NULL, "\n")) != NULL)
+        strcpy(lines[++i], tmp);
+    free(tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        remComment(lines[i]);
+        getKeyVal(lines[i], keyval);
+        if (keyval[1][0] != '\0') {
+            regex(keyval[1], "[^\"]+", ps);
+            def_strings(keyval[0], ps[0]);
+        }
+    }
+    return 1;
+}
+
+void processPCIFuzz(void) {
+    unsigned int i;
+    char dev[STRBUFFER];
+    char bt[STRBUFFER], bl[STRBUFFER];
+    char src[STRBUFFER], dst[STRBUFFER];
+
+    for (i = 0; i < nb_fuzzlist; i++) {
+        strcpy(dev, fuzzlist[i].key);
+        if (strcmp(dev, fuzzlist[i].val) != 0) {
+            strcpy(bl, dev);
+            getBuslist(bl);
+            strcpy(bt, bl);
+
+            /* source file */
+            strcpy(src, CONFDIR);
+            strcat(src, "/");
+            strcat(src, driver_name);
+            strcat(src, "/");
+            strcat(src, fuzzlist[i].val);
+            strcat(src, ".");
+            strcat(src, bt);
+            strcat(src, ".conf");
+
+            /* destination link */
+            strcpy(dst, CONFDIR);
+            strcat(dst, "/");
+            strcat(dst, driver_name);
+            strcat(dst, "/");
+            strcat(dst, dev);
+            strcat(dst, ".");
+            strcat(dst, bt);
+            strcat(dst, ".conf");
+
+            symlink(src, dst);
+        }
+    }
+}
+
+void addPCIFuzzEntry(const char *vendor, const char *device,
+                     const char *subvendor, const char *subdevice,
+                     const char *bt) {
+    char s[STRBUFFER], s2[STRBUFFER];
+    char fuzz[STRBUFFER];
+
+    strcpy(s, vendor);
+    strcat(s, ":");
+    strcat(s, device);
+
+    strcpy(fuzz, s);
+    getFuzzlist(fuzz);
+    if (subvendor[0] == '\0' || strcmp(fuzz, s) == 0) {
+        strcpy(s2, s);
+        if (subvendor[0] != '\0') {
+            strcat(s2, ":");
+            strcat(s2, subvendor);
+            strcat(s2, ":");
+            strcat(s2, subdevice);
+        }
+        def_fuzzlist(s, s2);
+        def_buslist(s, bt);
+    }
+}
+
+int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
+    int i = 0, j;
+    int found = 0, gotParam = 0;
+    char lines[512][STRBUFFER];
+    char ps[6][STRBUFFER];
+    char line[STRBUFFER];
+    char param[STRBUFFER], param_t[STRBUFFER];
+    char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
+    char hkr[STRBUFFER];
+    char p1[STRBUFFER], p2[STRBUFFER], p2_t[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
+    char fixlist[STRBUFFER], sOld[STRBUFFER];
+    char tok[DATABUFFER];
+    char *tmp;
+    /* patterns */
+    const char *ps1 = "([^,]*),([^,]*),([^,]*),([^,]*),(.*)";
+    const char *ps2 = "ndi\\\\params\\\\(.+)";
+    const char *ps3 = "(.+)\\\\.*";
+    struct DEF_SECTION *reg = NULL;
+
+    tmp = malloc(STRBUFFER);
+
+    reg = getSection(reg_name);
+    if (reg == NULL) {
+        printf("Parse error in inf. Unable to find section %s\n", reg_name);
+        return -1;
+    }
+
+    // Split
+    strcpy(tok, reg->data);
+    strcpy(lines[i], strtok(tok, "\n"));
+    while ((tmp = strtok(NULL, "\n")) != NULL)
+        strcpy(lines[++i], tmp);
+    free(tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        strcpy(line, lines[i]);
+        trim(remComment(line));
+        if (strcmp(line, "") != 0) {
+            regex(line, ps1, ps);
+            strcpy(hkr, ps[1]);
+            strcpy(p1, ps[2]);
+            strcpy(p2, ps[3]);
+            strcpy(p3, ps[4]);
+            strcpy(p4, ps[5]);
+            trim(hkr);
+            stripquotes(substStr(trim(p1)));
+            stripquotes(substStr(trim(p2)));
+            stripquotes(substStr(trim(p3)));
+            stripquotes(substStr(trim(p4)));
+            if (p1[0] != '\0') {
+                if (regex(p1, ps2, ps, ICASE)) {
+                    strcpy(param_t, ps[1]);
+                    regex(param_t, ps3, ps);
+                    strcpy(param_t, ps[1]);
+                    if (strcmp(param, param_t) != 0) {
+                        found = 0;
+                        strcpy(param, param_t);
+                        type[0] = '\0';
+                        val[0] = '\0';
+                    }
+                    strcpy(p2_t, p2);
+                    lc(p2_t);
+                    if (strcmp(p2_t, "type") == 0) {
+                        found++;
+                        strcpy(type, p4);
+                    }
+                    else if (strcmp(p2_t, "default") == 0) {
+                        found++;
+                        strcpy(val, p4);
+                    }
+
+                    if (found == 2)
+                        gotParam = 1;
+                }
+            }
+            else {
+                strcpy(param, p2);
+                strcpy(val, p4);
+                gotParam = 1;
+            }
+
+            if (gotParam && strcmp(param, "") != 0 && strcmp(param, "BusType") != 0) {
+                strcpy(s, param);
+                strcat(s, "|");
+                strcat(s, val);
+                strcpy(fixlist, s);
+                getFixlist(fixlist);
+                if (strcmp(fixlist, s) != 0) {
+                    strcpy(sOld, s);
+                    strcpy(s, fixlist);
+                    printf("Forcing parameter %s to %s\n", sOld, s);
+                }
+                strcpy(param_tab[*k], s);
+                *k = *k + 1;
+                param[0] = '\0';
+                gotParam = 0;
+            }
+        }
+    }
+    return 1;
+}
+
+/*
+ * Driver tools
+ * ------------
+ * - remove : remove a driver
+ *
+ */
+
+int remove(const char *name) {
+    char driver[STRBUFFER];
+
+    if (!isInstalled(name)) {
+        printf("Driver %s is not installed, Use -l to list installed drivers\n", name);
+        return -1;
+    }
+    else {
+        strcpy(driver, CONFDIR);
+        strcat(driver, "/");
+        strcat(driver, name);
+        if (rmtree(driver))
+            return 0;
+    }
+    return -1;
+}
+
+/*
+ * Parsers
+ * -------
+ * - parseVersion : parse version informations
+ * - parseMfr     : parse manufacturer informations
+ * - parseVendor  : parse vendor informations
+ * - parseID      : parse device ID informations (PCI and USB)
+ * - parseDevice  : parse device informations and write conf file
+ *
+ */
+
+int parseVersion(void) {
+    int i = 0, j;
+    char lines[512][STRBUFFER];
+    char keyval[2][STRBUFFER];
+    char ps[1][STRBUFFER];
+    char tok[DATABUFFER];
+    char *tmp;
+    struct DEF_SECTION *s = NULL;
+
+    tmp = malloc(STRBUFFER);
+
+    s = getSection("version");
+    if (!s)
+        return -1;
+
+    // Split
+    strcpy(tok, s->data);
+    strcpy(lines[i], strtok(tok, "\n"));
+    while ((tmp = strtok(NULL, "\n")) != NULL)
+        strcpy(lines[++i], tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        remComment(lines[i]);
+        getKeyVal(lines[i], keyval);
+        if (strcmp(keyval[0], "Provider") == 0) {
+            stripquotes(keyval[1]);
+            def_version(keyval[0], keyval[1]);
+        }
+        if (strcmp(keyval[0], "DriverVer") == 0) {
+            stripquotes(keyval[1]);
+            def_version(keyval[0], keyval[1]);
+        }
+        if (strcmp(keyval[0], "ClassGUID") == 0) {
+            regex(keyval[1], "[^{]+[^}]", ps);
+            strcpy(classguid, ps[0]);
+            lc(classguid);
+        }
+    }
+    parseMfr();
+    return 1;
+}
+
+int parseMfr(void) {
+    /* Examples:
+       Vendor
+       Vendor,ME,NT,NT.5.1
+       Vendor.NTx86 
+    */
+    int i = 0, j, k, l, res;
+    char keyval[2][STRBUFFER];
+    char lines[512][STRBUFFER];
+    char flavours[512][STRBUFFER];
+    char sp[2][STRBUFFER];
+    char line[STRBUFFER], ver[STRBUFFER];
+    char tok[DATABUFFER];
+    char section[STRBUFFER] = "";
+    char flavour[STRBUFFER], flav[STRBUFFER], flav_tmp[STRBUFFER];
+    char *tmp;
+    struct DEF_SECTION *manu = NULL;
+
+    tmp = malloc(STRBUFFER);
+
+    manu = getSection("manufacturer");
+    if (!manu)
+        return -1;
+
+    // Split
+    strcpy(tok, manu->data);
+    strcpy(lines[i], strtok(tok, "\n"));
+    while ((tmp = strtok(NULL, "\n")) != NULL)
+        strcpy(lines[++i], tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        strcpy(line, lines[i]);
+        remComment(line);
+        getKeyVal(line, keyval);
+
+        strcpy(ver, "Provider");
+        getVersion(ver);
+        if (strcmp(keyval[0], ver) == 0)
+            def_strings(keyval[0], keyval[1]);
+
+        if (keyval[1][0] != '\0') {
+            flavour[0] = '\0';
+            // Split
+            k = 0;
+            strcpy(tok, keyval[1]);
+            strcpy(flavours[k], strtok(tok, ","));
+            while ((tmp = strtok(NULL, ",")) != NULL) {
+                stripquotes(trim(tmp));
+                strcpy(flavours[++k], tmp);
+            }
+
+            if (k == 0) {
+                // Vendor
+                strcpy(section, flavours[0]);
+            }
+            else {
+                l = k + 1;
+                for (k = 1; k < l; k++) {
+                    strcpy(flav, flavours[k]);
+                    regex(flav, "\\s*(\\S+)\\s*", sp);
+                    strcpy(flav, sp[1]);
+                    strcpy(flav_tmp, flav);
+                    uc(flav_tmp);
+                    if (strcmp(flav_tmp, "NT.5.1") == 0) {
+                        // This is the best (XP)
+                        strcpy(section, flavours[0]);
+                        strcat(section, ".");
+                        strcat(section, flav);
+                        strcpy(flavour, flav);
+                    }
+                    else {
+                        flav_tmp[2] = '\0';
+                        if (strcmp(flav_tmp, "NT") == 0 && section[0] == '\0') {
+                            // This is the second best (win2k)
+                            strcpy(section, flavours[0]);
+                            strcat(section, ".");
+                            strcat(section, flav);
+                            strcpy(flavour, flav);
+                        }
+                    }
+                }
+            }
+            res = parseVendor(flavour, section);
+            if (res)
+                return res;
+        }
+    }
+    free(tmp);
+    return 0;
+}
+
+int parseVendor(const char *flavour, const char *vendor_name) {
+    int i = 0, j;
+    int bt;
+    char lines[512][STRBUFFER];
+    char keyval[2][STRBUFFER];
+    char section[STRBUFFER], id[STRBUFFER];
+    char tok[DATABUFFER];
+    char vendor[STRBUFFER], device[STRBUFFER], subvendor[STRBUFFER], subdevice[STRBUFFER];
+    char *tmp;
+    struct DEF_SECTION *vend = NULL;
+
+    tmp = malloc(STRBUFFER);
+
+    vend = getSection(vendor_name);
+    if (vend == NULL)
+        return -1;
+
+    // Split
+    strcpy(tok, vend->data);
+    strcpy(lines[i], strtok(tok, "\n"));
+    while ((tmp = strtok(NULL, "\n")) != NULL)
+        strcpy(lines[++i], tmp);
+    free(tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        remComment(lines[i]);
+        getKeyVal(lines[i], keyval);
+        if (keyval[1][0] != '\0') {
+            strcpy(section, strtok(keyval[1], ","));
+            strcpy(id, strtok(NULL, ","));
+            trim(section);
+            substStr(trim(id));
+            parseID(id, &bt, vendor, device, subvendor, subdevice);
+            bus = bt;
+            if (vendor[0] != '\0')
+                parseDevice(flavour, section, vendor, device, subvendor, subdevice);
+        }
+    }
+    return 0;
+}
+
+int parseID(const char *id, int *bt, char *vendor,
+            char *device, char *subvendor, char *subdevice) {
+    char ps[5][STRBUFFER];
+    /* patterns */
+    const char *ps1 = "PCI\\\\VEN_(\\w+)&DEV_(\\w+)&SUBSYS_(\\w{4})(\\S{4})";
+    const char *ps2 = "PCI\\\\VEN_(\\w+)&DEV_(\\w+)";
+    const char *ps3 = "USB\\\\VID_(\\w+)&PID_(\\w+)";
+
+    regex(id, ps1, ps);
+    if (ps[0][0] != '\0') {
+        *bt = WRAP_PCI_BUS;
+        strcpy(vendor, ps[1]);
+        strcpy(device, ps[2]);
+        strcpy(subvendor, ps[4]);
+        strcpy(subdevice, ps[3]);
+    }
+    else {
+        regex(id, ps2, ps);
+        if (ps[0][0] != '\0') {
+            *bt = WRAP_PCI_BUS;
+            strcpy(vendor, ps[1]);
+            strcpy(device, ps[2]);
+            subvendor[0] = '\0';
+            subdevice[0] = '\0';
+        }
+        else {
+            regex(id, ps3, ps);
+            if (ps[0][0] != '\0') {
+                *bt = WRAP_USB_BUS;
+                strcpy(vendor, ps[1]);
+                strcpy(device, ps[2]);
+                subvendor[0] = '\0';
+                subdevice[0] = '\0';
+            }
+        }
+    }
+    return 1;
+}
+
+int parseDevice(const char *flavour, const char *device_sect,
+                const char *device, const char *vendor,
+                const char *subvendor, const char *subdevice) {
+    int i = 0, j, k, push = 0, par_k = 0;
+    char lines[512][STRBUFFER];
+    char copy_files[512][STRBUFFER];
+    char param_tab[STRBUFFER][STRBUFFER];
+    char line[STRBUFFER];
+    char keyval[2][STRBUFFER];
+    char sec[STRBUFFER], addreg[STRBUFFER], key[STRBUFFER], reg[STRBUFFER];
+    char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER];
+    char ver[STRBUFFER], provider[STRBUFFER], providerstring[STRBUFFER];
+    char tok[DATABUFFER];
+    char *tmp;
+    struct DEF_SECTION *dev = NULL;
+    FILE *f;
+
+    tmp = malloc(STRBUFFER);
+
+    /* for RNDIS INF file (for USR5420), vendor section names device
+       section as RNDIS.NT.5.1, but copyfiles section is RNDIS.NT, so
+       first strip flavour from device_sect and then look for matching
+       section
+    */
+    if (strcmp(device_sect, "RNDIS.NT.5.1") == 0)
+        dev = getSection("RNDIS.NT");
+    if (!dev) {
+        strcpy(sec, device_sect);
+        strcat(sec, ".");
+        strcat(sec, flavour);
+        dev = getSection(sec);
+    }
+    if (!dev) {
+        strcpy(sec, device_sect);
+        strcat(sec, ".NT");
+        dev = getSection(sec);
+    }
+    if (!dev) {
+        strcpy(sec, device_sect);
+        strcat(sec, ".NTx86");
+        dev = getSection(sec);
+    }
+    if (!dev)
+        dev = getSection(device_sect);
+    if (!dev) {
+        printf("no dev %s %s\n", device_sect, flavour);
+        return -1;
+    }
+
+    // Split
+    strcpy(tok, dev->data);
+    strcpy(lines[i], strtok(tok, "\n"));
+    while ((tmp = strtok(NULL, "\n")) != NULL)
+        strcpy(lines[++i], tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        strcpy(line, lines[i]);
+        trim(remComment(line));
+        getKeyVal(line, keyval);
+        if (keyval[0][0] != '\0') {
+            strcpy(key, keyval[0]);
+            lc(key);
+            if (strcmp(key, "addreg") == 0)
+                strcpy(addreg, keyval[1]);
+            else if (strcmp(key, "copyfiles") == 0) {
+                strcpy(copy_files[push], keyval[1]);
+                push++;
+            }
+            else if (strcmp(key, "BusType"))
+                def_strings(keyval[0], keyval[1]);
+        }
+    }
+
+    strcpy(filename, device);
+    strcat(filename, ":");
+    strcat(filename, vendor);
+    if (subvendor[0] != '\0') {
+        strcat(filename, ":");
+        strcat(filename, subvendor);
+        strcat(filename, ":");
+        strcat(filename, subdevice);
+    }
+
+    sprintf(bt, "%X", bus);
+    strcat(filename, ".");
+    strcat(filename, bt);
+    strcat(filename, ".conf");
+    if (bus == WRAP_PCI_BUS || bus == WRAP_PCMCIA_BUS)
+        addPCIFuzzEntry(device, vendor, subvendor, subdevice, bt);
+
+    strcpy(file, CONFDIR);
+    strcat(file, "/");
+    strcat(file, driver_name);
+    strcat(file, "/");
+    strcat(file, filename);
+    if (!(f = fopen(file, "w"))) {
+        printf("Unable to create file %s\n", filename);
+        return -1;
+    }
+
+    strcpy(ver, "DriverVer");
+    getVersion(ver);
+    strcpy(provider, "Provider");
+    getVersion(provider);
+    strcpy(providerstring, provider);
+    stripquotes(substStr(trim(providerstring)));
+
+    fputs("NdisVersion|0x50001\n", f);
+    fputs("Environment|1\n", f);
+    strcpy(bustype, "BusType");
+    getString(bustype);
+    if (strcmp(bustype, "BusType") != 0)
+        fprintf(f, "BusType|%s\n", bustype);
+    fprintf(f, "class_guid|%s\n", classguid);
+    fputs("mac_address|XX:XX:XX:XX:XX:XX\n", f);
+    fprintf(f, "driver_version|%s,%s\n", providerstring, ver);
+    fputs("\n", f);
+
+    // Split
+    i = 0;
+    strcpy(tok, addreg);
+    strcpy(lines[i], strtok(tok, ","));
+    while ((tmp = strtok(NULL, ",")) != NULL)
+        strcpy(lines[++i], tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        strcpy(reg, lines[i]);
+        trim(reg);
+        addReg(reg, param_tab, &par_k);
+    }
+    /* sort and unify before writing */
+    unisort(param_tab, &par_k);
+    for (i = 0; i < par_k; i++)
+        fprintf(f, "%s\n", param_tab[i]);
+
+    for (k = 0; k < push; k++) {
+        // Split
+        i = 0;
+        strcpy(tok, copy_files[k]);
+        strcpy(lines[i], strtok(tok, ","));
+        while ((tmp = strtok(NULL, ",")) != NULL)
+            strcpy(lines[++i], tmp);
+
+        j = i + 1;
+        for (i = 0; i < j; i++) {
+            strcpy(file, lines[i]);
+            trim(file);
+            copyfiles(file);
+        }
+    }
+    free(tmp);
+    fclose(f);
+    return 1;
+}
+
+/*
+ * Hashing processing
+ * ------------------
+ * - getKeyVal    : split a line for get the key and the value
+ * - getString    : get "strings" value from a key
+ * - getVersion   : get "version" value from a key
+ * - getFuzzlist  : get "fuzz" value from a key
+ * - getBuslist   : get "bus" value from key
+ * - getFixlist   : get "fix" value from a defined value (main init)
+ * - def_strings  : put a key and value to the strings table
+ * - def_version  : put a key and value to the version table
+ * - def_fuzzlist : put a key and value to the fuzzlist table
+ * - def_buslist  : put a key and value to the buslist table
+ *
+ */
+
+void getKeyVal(const char *line, char tmp[2][STRBUFFER]) {
+    char ps[3][STRBUFFER];
+
+    regex(line, "(.+)=(.+)", ps);
+    strcpy(tmp[0], trim(ps[1]));
+    strcpy(tmp[1], trim(ps[2]));
+}
+
+char *getString(char *s) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(strings[i].key, s) == 0) {
+            strcpy(s, strings[i].val);
+            break;
+        }
+        i++;
+    } while (i < nb_strings && i < sizeof(strings)/sizeof(strings[0]));
+    return s;
+}
+
+char *getVersion(char *s) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(version[i].key, s) == 0) {
+            strcpy(s, version[i].val);
+            break;
+        }
+        i++;
+    } while (i < nb_version && i < sizeof(version)/sizeof(version[0]));
+    return s;
+}
+
+char *getFuzzlist(char *s) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(fuzzlist[i].key, s) == 0) {
+            strcpy(s, fuzzlist[i].val);
+            break;
+        }
+        i++;
+    } while (i < nb_fuzzlist && i < sizeof(fuzzlist)/sizeof(fuzzlist[0]));
+    return s;
+}
+
+char *getBuslist(char *s) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(buslist[i].key, s) == 0) {
+            strcpy(s, buslist[i].val);
+            break;
+        }
+        i++;
+    } while (i < nb_buslist && i < sizeof(buslist)/sizeof(buslist[0]));
+    return s;
+}
+
+char *getFixlist(char *s) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(param_fixlist[i].n, s) == 0) {
+            strcpy(s, param_fixlist[i].m);
+            break;
+        }
+        i++;
+    } while (i < sizeof(param_fixlist)/sizeof(param_fixlist[0]));
+    return s;
+}
+
+void def_strings(const char *key, const char *val) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(strings[i].key, key) == 0) {
+            strcpy(strings[i].val, val);
+            break;
+        }
+        if (i == nb_strings) {
+            strcpy(strings[i].key, key);
+            strcpy(strings[i].val, val);
+            nb_strings++;
+            break;
+        }
+        i++;
+    } while (i <= nb_strings && i < sizeof(strings)/sizeof(strings[0]));
+}
+
+void def_version(const char *key, const char *val) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(version[i].key, key) == 0) {
+            strcpy(version[i].val, val);
+            break;
+        }
+        if (i == nb_version) {
+            strcpy(version[i].key, key);
+            strcpy(version[i].val, val);
+            nb_version++;
+            break;
+        }
+        i++;
+    } while (i <= nb_version && i < sizeof(version)/sizeof(version[0]));
+}
+
+void def_fuzzlist(const char *key, const char *val) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(fuzzlist[i].key, key) == 0) {
+            strcpy(fuzzlist[i].val, val);
+            break;
+        }
+        if (i == nb_fuzzlist) {
+            strcpy(fuzzlist[i].key, key);
+            strcpy(fuzzlist[i].val, val);
+            nb_fuzzlist++;
+            break;
+        }
+        i++;
+    } while (i <= nb_fuzzlist && i < sizeof(fuzzlist)/sizeof(fuzzlist[0]));
+}
+
+void def_buslist(const char *key, const char *val) {
+    unsigned int i = 0;
+
+    do {
+        if (strcmp(buslist[i].key, key) == 0) {
+            strcpy(buslist[i].val, val);
+            break;
+        }
+        if (i == nb_buslist) {
+            strcpy(buslist[i].key, key);
+            strcpy(buslist[i].val, val);
+            nb_buslist++;
+            break;
+        }
+        i++;
+    } while (i <= nb_buslist && i < sizeof(buslist)/sizeof(buslist[0]));
+}
+
+/*
+ * Files processing
+ * ----------------
+ * - copyfiles   : search files for the copy
+ * - copy_file   : search the real name of the file
+ * - copy        : copy file processing
+ * - finddir     : depend of copy_file
+ * - findfile    : depend of copy_file
+ * - file_exists : test if a file exists
+ * - rmtree      : remove a dir
+ *
+ */
+
+int copyfiles(const char *copy_name) {
+    int i = 0, j, k, l;
+    char sp[2][STRBUFFER];
+    char lines[512][STRBUFFER];
+    char files[512][STRBUFFER];
+    char line[STRBUFFER], file[STRBUFFER];
+    char tok[DATABUFFER];
+    char *tmp;
+    struct DEF_SECTION *copy = NULL;
+
+    tmp = malloc(STRBUFFER);
+
+    regex(copy_name, "^@(.*)", sp);
+    if (sp[0][0] != '\0') {
+        copy_file(sp[1]);
+        return 1;
+    }
+
+    copy = getSection(copy_name);
+    if (!copy) {
+        printf("Parse error in inf. Unable to find section %s\n", copy_name);
+        return -1;
+    }
+
+    // Split
+    strcpy(tok, copy->data);
+    strcpy(lines[i], strtok(tok, "\n"));
+    while ((tmp = strtok(NULL, "\n")) != NULL)
+        strcpy(lines[++i], tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        strcpy(line, lines[i]);
+        trim(line);
+        if (line[0] == '[')
+            break;
+
+        // Split
+        k = 0;
+        strcpy(tok, copy->data);
+        strcpy(files[k], strtok(tok, ","));
+        while ((tmp = strtok(NULL, ",")) != NULL)
+            strcpy(lines[++k], tmp);
+
+        l = k + 1;
+        for (k = 0; k < l; k++) {
+            strcpy(file, files[k]);
+            trim(file);
+            if (strlen(file) > 0)
+                copy_file(file);
+        }
+    }
+    free(tmp);
+    return 0;
+}
+
+void copy_file(char *file) {
+    int nocopy = 0;
+    char sp[2][STRBUFFER];
+    char newname[STRBUFFER];
+    char src[STRBUFFER], dst[STRBUFFER];
+    char dir[STRBUFFER];
+    char realname[STRBUFFER];
+
+    regex(file, "^;(.*)", sp);
+    if (sp[0][0] != '\0')
+        strcpy(file, sp[1]);
+    trim(remComment(file));
+
+    /*
+    for (k = 0; k < nb_blacklist; k++) {
+        strcpy(lfile, file);
+        lc(lfile);
+        if (strcmp(copy_blacklist[k], lfile) == 0)
+            nocopy = 1;
+    }
+    */
+
+    strcpy(dir, file);
+    finddir(dir);
+    if (dir[0] != '\0')
+        findfile("", dir);
+
+    strcpy(realname, file);
+    findfile(dir, realname);
+
+    if (realname[0] != '\0') {
+        strcpy(newname, realname);
+        if (dir) {
+            strcpy(realname, dir);
+            strcat(realname, "/");
+            strcat(realname, newname);
+        }
+        lc(newname);
+        if (!nocopy) {
+            strcpy(src, instdir);
+            strcat(src, "/");
+            strcat(src, realname);
+            strcpy(dst, CONFDIR);
+            strcat(dst, "/");
+            strcat(dst, driver_name);
+            strcat(dst, "/");
+            strcat(dst, newname);
+            copy(src, dst, 0644);
+        }
+    }
+}
+
+int copy(const char *file_src, const char *file_dst, int mod) {
+    int infile = 0;
+    int outfile = 1;
+    int nbytes;
+    char rwbuf[1024];
+
+    if ((infile = open(file_src, O_RDONLY)) == -1)
+        return -1;
+    if ((outfile = open(file_dst, O_WRONLY | O_CREAT | O_TRUNC, mod)) == -1)
+        return -1;
+
+    while ((nbytes = read(infile, rwbuf, 1024)) > 0)
+        write(outfile, rwbuf, nbytes);
+
+    close(infile);
+    close(outfile);
+    return 1;
+}
+
+int finddir(char *file) {
+    int i = 0, j;
+    char sp[3][STRBUFFER];
+    char lines[512][STRBUFFER];
+    char line[STRBUFFER];
+    char file_tmp[STRBUFFER], dir[STRBUFFER];
+    char tok[DATABUFFER];
+    char *tmp;
+    struct DEF_SECTION *sourcedisksfiles = NULL;
+
+    tmp = malloc(STRBUFFER);
+
+    sourcedisksfiles = getSection("sourcedisksfiles");
+    if (!sourcedisksfiles) {
+        file[0] = '\0';
+        return -1;
+    }
+
+    // Split
+    strcpy(tok, sourcedisksfiles->data);
+    strcpy(lines[i], strtok(tok, "\n"));
+    while ((tmp = strtok(NULL, "\n")) != NULL)
+        strcpy(lines[++i], tmp);
+    free(tmp);
+
+    j = i + 1;
+    for (i = 0; i < j; i++) {
+        strcpy(line, lines[i]);
+        trim(remComment(line));
+        regex(line, "(.+)=.+,+(.*)", sp);
+        strcpy(file_tmp, file);
+        strcpy(file, sp[1]);
+        strcpy(dir, sp[2]);
+        lc(trim(file));
+        trim(dir);
+        lc(file_tmp);
+        if (file[0] != '\0' && dir[0] != '\0' && strcmp(file, file_tmp) == 0) {
+            strcpy(file, dir);
+            return 1;
+        }
+    }
+    file[0] = '\0';
+    return -1;
+}
+
+int findfile(const char *dir, char *file) {
+    char path[STRBUFFER];
+    char file_tmp[STRBUFFER];
+    DIR *d;
+    struct dirent *dp;
+
+    strcpy(path, instdir);
+    strcat(path, "/");
+    strcat(path, dir);
+    if (!(d = opendir(path))) {
+        printf("Unable to open %s\n", instdir);
+        file[0] = '\0';
+        return -1;
+    }
+
+    while ((dp = readdir(d))) {
+        strcpy(file_tmp, dp->d_name);
+        lc(file_tmp);
+        lc(file);
+        if (strcmp(file, file_tmp) == 0) {
+            closedir(d);
+            strcpy(file, dp->d_name);
+            return 1;
+        }
+    }
+    closedir(d);
+    file[0] = '\0';
+    return -1;
+}
+
+int file_exists(const char *file) {
+    struct stat st;
+
+    if (stat(file, &st) < 0)
+        return 0;
+    return 1;
+}
+
+int rmtree(const char *dir) {
+    char file[STRBUFFER];
+    DIR *d;
+    struct dirent *dp;
+
+    d = opendir(dir);
+    while ((dp = readdir(d))) {
+        if (strcmp(dp->d_name, ".") != 0 || strcmp(dp->d_name, "..") != 0) {
+            strcpy(file, dir);
+            strcat(file, "/");
+            strcat(file, dp->d_name);
+            unlink(file);
+        }
+    }
+    if (rmdir(dir) == 0)
+        return 1;
+    return 0;
+}
+
+/*
+ * Strings processing
+ * ------------------
+ * - uc          : string to upper case
+ * - ul          : string to lower case
+ * - trim        : remove spaces at the left and the right
+ * - stripquotes : remove quotes
+ * - remComment  : remove INF comments
+ * - substStr    : substitute a string from the strings table
+ *
+ */
+
+char *uc(char *data) {
+    int i;
+
+    for (i = 0; data[i] != '\0'; i++)
+        data[i] = toupper(data[i]);
+    data[i] = '\0';
+    return data;
+}
+
+char *lc(char *data) {
+    int i;
+
+    for (i = 0; data[i] != '\0'; i++)
+        data[i] = tolower(data[i]);
+    data[i] = '\0';
+    return data;
+}
+
+char *trim(char *s) {
+    char ps[1][STRBUFFER];
+
+    regex(s, "\\S.*", ps);
+    strcpy(s, ps[0]);
+    regex(s, ".*\\S", ps);
+    strcpy(s, ps[0]);
+    return s;
+}
+
+char *stripquotes(char *s) {
+    char ps[1][STRBUFFER];
+
+    regex(s, "[^\"]+", ps);
+    strcpy(s, ps[0]);
+    return s;
+}
+
+char *remComment(char *s) {
+    char ps[1][STRBUFFER];
+
+    regex(s, "[^;]*", ps);
+    strcpy(s, ps[0]);
+    return s;
+}
+
+char *substStr(char *s) {
+    char ps[2][STRBUFFER];
+
+    if (regex(s, "^%(.+)%$", ps)) {
+        strcpy(s, ps[1]);
+        getString(s);
+    }
+    return s;
+}
+
+/*
+ * Others
+ * ------
+ * - regex      : regular expressions
+ * - getSection : get a section pointer
+ * - unisort    : sort and unify a table
+ * - usage      : help
+ *
+ */
+
+int regex(const char *str_request, const char *str_regex, char rmatch[][STRBUFFER], ...) {
+    // optional parameter
+    va_list pp;
+    va_start(pp, rmatch);
+    int icase = 0;
+    if (pp != NULL)
+        icase = va_arg(pp, int);
+    va_end(pp);
+
+    int err, match, start, end;
+    unsigned int i;
+    char *text = NULL;
+    size_t nmatch = 0;
+    size_t size;
+    regex_t preg;
+    regmatch_t *pmatch = NULL;
+
+    err = regcomp(&preg, str_regex, icase ? REG_EXTENDED | REG_ICASE : REG_EXTENDED);
+    if (err == 0) {
+        nmatch = preg.re_nsub;
+        pmatch = malloc(sizeof(*pmatch) * OVECCOUNT);
+        if (pmatch) {
+            match = regexec(&preg, str_request, OVECCOUNT, pmatch, 0);
+            regfree(&preg);
+            if (match == 0) {
+                for (i = 0; i <= nmatch; i++) {
+                    start = pmatch[i].rm_so;
+                    end = pmatch[i].rm_eo;
+                    size = end - start;
+                    text = malloc(sizeof(*text) * (size + 1));
+                    if (text) {
+                        strncpy(text, &str_request[start], size);
+                        text[size] = '\0';
+                        strcpy(rmatch[i], text);
+                    }
+                }
+                return 1;
+            }
+        }
+    }
+    rmatch[0][0] = '\0';
+    return 0;
+}
+
+struct DEF_SECTION *getSection(const char *needle) {
+    unsigned int i;
+    char sec[STRBUFFER];
+    char need[STRBUFFER];
+
+    strcpy(need, needle);
+    lc(need);
+
+    for (i = 0; i < nb_sections; i++) {
+        strcpy(sec, sections[i].name);
+        lc(sec);
+        if (strcmp(sec, need) == 0)
+            return &sections[i];
+    }
+    return NULL;
+}
+
+void unisort(char tab[][STRBUFFER], int *last) {
+    int i, j;
+    int change = 1;
+    char tmp[STRBUFFER];
+    char t1[STRBUFFER], t2[STRBUFFER];
+
+    while (change) {
+        change = 0;
+        for (i = 0; i < *last - 1; i++) {
+            strcpy(t1, tab[i]);
+            lc(t1);
+            for (j = 0; j < i; j++) {
+                strcpy(t2, tab[j]);
+                lc(t2);
+                if (strcmp(t1, t2) == 0) {
+                    *last = *last - 1;
+                    strcpy(tab[i], tab[*last]);
+                    change = 1;
+                }
+            }
+            strcpy(t2, tab[i+1]);
+            lc(t2);
+            if (strcmp(t2, t1) < 0) {
+                strcpy(tmp, tab[i]);
+                strcpy(tab[i], tab[i+1]);
+                strcpy(tab[i+1], tmp);
+                change = 1;
+            }
+        }
+    }
+}
+
+void usage(void) {
+    printf("Usage: ndiswrapper OPTION\n\n");
+    printf("Manage ndis drivers for ndiswrapper.\n");
+    printf("-i inffile        Install driver described by 'inffile'\n");
+/*
+    printf("-d devid driver   Use installed 'driver' for 'devid'\n");
+*/
+    printf("-e driver         Remove 'driver'\n");
+/*
+    printf("-l                List installed drivers\n");
+    printf("-m                Write configuration for modprobe\n");
+    printf("-da               Write module alias configuration for all devices\n");
+    printf("-di               Write module install configuration for all devices\n");
+    printf("-v                Report version information\n");
+    printf("\n\nwhere 'devid' is either PCIID or USBID of the form XXXX:XXXX\n");
+*/
+}
