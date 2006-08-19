@@ -37,8 +37,8 @@
 #include "ndiswrapper.h"
 
 /* global variables */
-struct DEF_SECTION sections[STRBUFFER];
 unsigned int nb_sections = 0;
+struct DEF_SECTION **sections;
 
 struct DEF_STRVER strings[STRBUFFER];
 struct DEF_STRVER version[STRBUFFER];
@@ -125,13 +125,14 @@ int install(const char *inf) {
     char install_dir[STRBUFFER];
     char dst[STRBUFFER];
     DIR *dir;
-
+    unsigned int i;
+    char *start, *end;
+    
     if (!file_exists(inf)) {
         printf("Unable to locate %s\n", inf);
         return -1;
     }
-
-    char *start, *end;
+    
     end = strstr(inf,".inf");
     if (!end)
         end=strstr(inf,".INF");
@@ -160,18 +161,27 @@ int install(const char *inf) {
         return -1;
     }
 
-    loadinf(inf);
-    initStrings();
-    parseVersion();
-    strcpy(dst, install_dir);
-    strcat(dst, "/");
-    strcat(dst, driver_name);
-    strcat(dst, ".inf");
-    if (!copy(inf, dst, 0644)) {
-        printf("couldn't copy %s\n", inf);
-        return -1;
+    sections = (struct DEF_SECTION**)malloc(STRBUFFER * sizeof(struct DEF_SECTION*));
+    if(loadinf(inf)){
+        initStrings();
+        parseVersion();
+        strcpy(dst, install_dir);
+        strcat(dst, "/");
+        strcat(dst, driver_name);
+        strcat(dst, ".inf");
+        if (!copy(inf, dst, 0644)) {
+            printf("couldn't copy %s\n", inf);
+            return -1;
+        }
+        processPCIFuzz();
     }
-    processPCIFuzz();
+
+    if(sections){
+        for (i=0; i<nb_sections; i++)
+            if(sections[i])
+		    free(sections[i]);
+        free(sections);
+    }
     return 0;
 }
 
@@ -202,41 +212,37 @@ int isInstalled(const char *name) {
 }
 
 int loadinf(const char *filename) {
-    int i = 0;
     char s[DATABUFFER];
     char val[STRBUFFER];
-    struct DEF_SECTION section;
-    struct DEF_SECTION new_section;
+    char *start, *end;
     FILE *f;
-
-    new_section.name[0] = '\0';
-    new_section.data[0] = '\0';
-
+    
+    if(!sections)
+	return -1;
     if ((f = fopen(filename, "r")) == NULL)
         return -1;
 
-    strcpy(section.name, "none");
     while (fgets(s, FGETSBUFFER, f)) {
         /* Convert from unicode */
         //strcpy(s, regex(s, "s/\xff\xfe//")); // FIXME
         //strcpy(s, regex(s, "s/\0//")); // FIXME
-
-        char *start, *end;
+        if (!nb_sections){
+            nb_sections++;
+            sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
+	    strcpy(sections[nb_sections-1]->name,"none");
+	}
         start = strchr(s,'[');
         end = strchr(s,']');
         if (start && end) {
+            nb_sections++;
+	    sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
             strncpy(val, start+1, end-start-1);
             val[end-start-1] = '\0';
-            sections[i++] = section;
-            nb_sections++;
-            section = new_section;
-            strcpy(section.name, val);
+            strcpy(sections[nb_sections-1]->name, val);
         }
         else
-            strcat(section.data, s);
+            strcat(sections[nb_sections-1]->data, s);
     }
-    sections[i++] = section;
-    nb_sections++;
     fclose(f);
     return 1;
 }
@@ -1381,10 +1387,10 @@ struct DEF_SECTION *getSection(const char *needle) {
     lc(need);
 
     for (i = 0; i < nb_sections; i++) {
-        strcpy(sec, sections[i].name);
+        strcpy(sec, sections[i]->name);
         lc(sec);
         if (strcmp(sec, need) == 0)
-            return &sections[i];
+            return sections[i];
     }
     return NULL;
 }
