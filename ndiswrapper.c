@@ -279,7 +279,7 @@ int initStrings(void) {
 void processPCIFuzz(void) {
     unsigned int i;
     char dev[STRBUFFER];
-    char bt[STRBUFFER], bl[STRBUFFER];
+    char bl[STRBUFFER];
     char src[STRBUFFER], dst[STRBUFFER];
 
     for (i = 0; i < nb_fuzzlist; i++) {
@@ -287,7 +287,6 @@ void processPCIFuzz(void) {
         if (strcmp(dev, fuzzlist[i].val) != 0) {
             strcpy(bl, dev);
             getBuslist(bl);
-            strcpy(bt, bl);
 
             /* source file */
             strcpy(src, CONFDIR);
@@ -296,7 +295,7 @@ void processPCIFuzz(void) {
             strcat(src, "/");
             strcat(src, fuzzlist[i].val);
             strcat(src, ".");
-            strcat(src, bt);
+            strcat(src, bl);
             strcat(src, ".conf");
 
             /* destination link */
@@ -306,7 +305,7 @@ void processPCIFuzz(void) {
             strcat(dst, "/");
             strcat(dst, dev);
             strcat(dst, ".");
-            strcat(dst, bt);
+            strcat(dst, bl);
             strcat(dst, ".conf");
 
             symlink(src, dst);
