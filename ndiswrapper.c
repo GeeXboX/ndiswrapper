@@ -649,7 +649,7 @@ int parseVendor(const char *flavour, const char *vendor_name) {
             strcpy(section, strtok(keyval[1], ","));
             strcpy(id, strtok(NULL, ","));
             trim(section);
-            substStr(trim(id));
+            uc(substStr(trim(id)));
             parseID(id, &bt, vendor, device, subvendor, subdevice);
             bus = bt;
             if (vendor[0] != '\0')
