@@ -1,5 +1,5 @@
 /*
- * Ndiswrapper manager, initially writed for GeeXboX
+ * Ndiswrapper manager, initially written for GeeXboX
  * Copyright (C) 2006 Mathieu Schroeter <mathieu.schroeter@gamesover.ch>
  *
  * Based on the original ndiswrapper-1.21 Perl script
