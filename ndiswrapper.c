@@ -126,22 +126,26 @@ int install(const char *inf) {
     char dst[STRBUFFER];
     DIR *dir;
     unsigned int i;
-    char *start, *end;
+    char *slash, *ext;
     
     if (!file_exists(inf)) {
         printf("Unable to locate %s\n", inf);
         return -1;
     }
     
-    end = strstr(inf,".inf");
-    if (!end)
-        end=strstr(inf,".INF");
-    start = strrchr(inf,'/');
-    strncpy(driver_name, start+1, end-start-1);
-    driver_name[end-start] = '\0';
+    ext = strstr(inf,".inf");
+    if (!ext)
+        ext=strstr(inf,".INF");
+    slash = strrchr(inf,'/');
+    if (!slash || !ext){
+        printf("%s is not a valid inf filename, please provide in format /path/filename.inf\n",inf);
+	return -1;
+    }
+    strncpy(driver_name, slash+1, ext-slash-1);
+    driver_name[ext-slash] = '\0';
     lc(driver_name);
-    strncpy(instdir, inf, start-inf);
-    instdir[start-inf+1] = '\0';
+    strncpy(instdir, inf, slash-inf);
+    instdir[slash-inf+1] = '\0';
 
     if (isInstalled(driver_name)) {
         printf("%s is already installed. Use -e to remove it\n", driver_name);
