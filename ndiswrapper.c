@@ -32,7 +32,7 @@
 #include <sys/stat.h>   /* stat */
 #include <dirent.h>     /* opendir closedir readdir */
 #include <regex.h>      /* regexec regfree regcomp */
-#include <string.h>     /* strcat strcpy strcmp strcasecmp strlen strncpy */
+#include <string.h>     /* strcat strcpy strcmp strcasecmp strchr strrchr strlen strncpy */
 
 #include "ndiswrapper.h"
 
@@ -1318,10 +1318,13 @@ char *remComment(char *s) {
 }
 
 char *substStr(char *s) {
-    char ps[2][STRBUFFER];
+    char *lbracket, *rbracket;
 
-    if (regex(s, "^%(.+)%$", ps)) {
-        strcpy(s, ps[1]);
+    lbracket = strchr(s,'%');
+    rbracket = strrchr(s,'%');
+    if (lbracket && rbracket && lbracket != rbracket && s[rbracket-lbracket+1] == '\0') {
+        strncpy(s, lbracket+1, rbracket-lbracket-1);
+        s[rbracket-lbracket-1] = '\0';
         getString(s);
     }
     return s;
