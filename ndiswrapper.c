@@ -356,7 +356,6 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     char line[STRBUFFER];
     char param[STRBUFFER], param_t[STRBUFFER];
     char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
-    char hkr[STRBUFFER];
     char p1[STRBUFFER], p2[STRBUFFER], p2_t[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
     char fixlist[STRBUFFER], sOld[STRBUFFER];
     char *tok;
@@ -388,12 +387,10 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
         trim(remComment(line));
         if (strcmp(line, "") != 0) {
             regex(line, ps1, ps);
-            strcpy(hkr, ps[1]);
             strcpy(p1, ps[2]);
             strcpy(p2, ps[3]);
             strcpy(p3, ps[4]);
             strcpy(p4, ps[5]);
-            trim(hkr);
             stripquotes(substStr(trim(p1)));
             stripquotes(substStr(trim(p2)));
             stripquotes(substStr(trim(p3)));
