@@ -157,9 +157,7 @@ int install(const char *inf) {
         mkdir(CONFDIR, 0777);
 
     printf("Installing %s\n", driver_name);
-    strcpy(install_dir, CONFDIR);
-    strcat(install_dir, "/");
-    strcat(install_dir, driver_name);
+    snprintf(install_dir, sizeof(install_dir), CONFDIR "/%s", driver_name);
     if (mkdir(install_dir, 0777) == -1) {
         printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
         return -1;
@@ -169,10 +167,7 @@ int install(const char *inf) {
     if(loadinf(inf)){
         initStrings();
         parseVersion();
-        strcpy(dst, install_dir);
-        strcat(dst, "/");
-        strcat(dst, driver_name);
-        strcat(dst, ".inf");
+        snprintf(dst, sizeof(dst), "%s/%s.inf", install_dir, driver_name);
         if (!copy(inf, dst, 0644)) {
             printf("couldn't copy %s\n", inf);
             return -1;
@@ -202,9 +197,7 @@ int isInstalled(const char *name) {
 
     d = opendir(CONFDIR);
     while ((dp = readdir(d))) {
-        strcpy(f_path, CONFDIR);
-        strcat(f_path, "/");
-        strcat(f_path, dp->d_name);
+        snprintf(f_path, sizeof(f_path), CONFDIR "/%s", dp->d_name);
         stat(f_path, &st);
         if (S_ISDIR(st.st_mode) && !strcmp(name, dp->d_name)) {
             installed = 1;
@@ -297,24 +290,10 @@ void processPCIFuzz(void) {
             getBuslist(bl);
 
             /* source file */
-            strcpy(src, CONFDIR);
-            strcat(src, "/");
-            strcat(src, driver_name);
-            strcat(src, "/");
-            strcat(src, fuzzlist[i].val);
-            strcat(src, ".");
-            strcat(src, bl);
-            strcat(src, ".conf");
+            snprintf(src, sizeof(src), CONFDIR "/%s/%s.%s.conf", driver_name, fuzzlist[i].val, bl);
 
             /* destination link */
-            strcpy(dst, CONFDIR);
-            strcat(dst, "/");
-            strcat(dst, driver_name);
-            strcat(dst, "/");
-            strcat(dst, fuzzlist[i].key);
-            strcat(dst, ".");
-            strcat(dst, bl);
-            strcat(dst, ".conf");
+            snprintf(dst, sizeof(dst), CONFDIR "/%s/%s.%s.conf", driver_name, fuzzlist[i].key, bl);
 
             symlink(src, dst);
         }
@@ -327,19 +306,14 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
     char s[STRBUFFER], s2[STRBUFFER];
     char fuzz[STRBUFFER];
 
-    strcpy(s, vendor);
-    strcat(s, ":");
-    strcat(s, device);
+    snprintf(s, sizeof(s), "%s:%s", vendor, device);
 
     strcpy(fuzz, s);
     getFuzzlist(fuzz);
     if (subvendor[0] == '\0' || strcmp(fuzz, s) == 0) {
         strcpy(s2, s);
         if (subvendor[0] != '\0') {
-            strcat(s2, ":");
-            strcat(s2, subvendor);
-            strcat(s2, ":");
-            strcat(s2, subdevice);
+            snprintf(s2, sizeof(s2), "%s:%s:%s", s, subvendor, subdevice);
         }
         def_fuzzlist(s, s2);
         def_buslist(s, bt);
@@ -426,9 +400,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
             }
 
             if (gotParam && strcmp(param, "") != 0 && strcmp(param, "BusType") != 0) {
-                strcpy(s, param);
-                strcat(s, "|");
-                strcat(s, val);
+                snprintf(s, sizeof(s), "%s|%s", param, val);
                 strcpy(fixlist, s);
                 getFixlist(fixlist);
                 if (strcmp(fixlist, s) != 0) {
@@ -461,9 +433,7 @@ int remove(const char *name) {
         return -1;
     }
     else {
-        strcpy(driver, CONFDIR);
-        strcat(driver, "/");
-        strcat(driver, name);
+        snprintf(driver, sizeof(driver), CONFDIR "/%s", name);
         if (rmtree(driver))
             return 0;
     }
@@ -591,18 +561,14 @@ int parseMfr(void) {
                     uc(flav_tmp);
                     if (strcmp(flav_tmp, "NT.5.1") == 0) {
                         // This is the best (XP)
-                        strcpy(section, flavours[0]);
-                        strcat(section, ".");
-                        strcat(section, flav);
+                        snprintf(section, sizeof(section), "%s.%s", flavours[0], flav);
                         strcpy(flavour, flav);
                     }
                     else {
                         flav_tmp[2] = '\0';
                         if (strcmp(flav_tmp, "NT") == 0 && section[0] == '\0') {
                             // This is the second best (win2k)
-                            strcpy(section, flavours[0]);
-                            strcat(section, ".");
-                            strcat(section, flav);
+                            snprintf(section, sizeof(section), "%s.%s", flavours[0], flav);
                             strcpy(flavour, flav);
                         }
                     }
@@ -725,19 +691,15 @@ int parseDevice(const char *flavour, const char *device_sect,
     if (strcmp(device_sect, "RNDIS.NT.5.1") == 0)
         dev = getSection("RNDIS.NT");
     if (!dev) {
-        strcpy(sec, device_sect);
-        strcat(sec, ".");
-        strcat(sec, flavour);
+        snprintf(sec, sizeof(sec), "%s.%s", device_sect, flavour);
         dev = getSection(sec);
     }
     if (!dev) {
-        strcpy(sec, device_sect);
-        strcat(sec, ".NT");
+        snprintf(sec, sizeof(sec), "%s.NT", device_sect);
         dev = getSection(sec);
     }
     if (!dev) {
-        strcpy(sec, device_sect);
-        strcat(sec, ".NTx86");
+        snprintf(sec, sizeof(sec), "%s.NTx86", device_sect);
         dev = getSection(sec);
     }
     if (!dev)
@@ -770,9 +732,7 @@ int parseDevice(const char *flavour, const char *device_sect,
         }
     }
 
-    strcpy(filename, device);
-    strcat(filename, ":");
-    strcat(filename, vendor);
+    snprintf(filename, sizeof(filename), "%s:%s", device, vendor);
     if (subvendor[0] != '\0') {
         strcat(filename, ":");
         strcat(filename, subvendor);
@@ -780,18 +740,14 @@ int parseDevice(const char *flavour, const char *device_sect,
         strcat(filename, subdevice);
     }
 
-    sprintf(bt, "%X", bus);
+    snprintf(bt, sizeof(bt), "%X", bus);
     strcat(filename, ".");
     strcat(filename, bt);
     strcat(filename, ".conf");
     if (bus == WRAP_PCI_BUS || bus == WRAP_PCMCIA_BUS)
         addPCIFuzzEntry(device, vendor, subvendor, subdevice, bt);
 
-    strcpy(file, CONFDIR);
-    strcat(file, "/");
-    strcat(file, driver_name);
-    strcat(file, "/");
-    strcat(file, filename);
+    snprintf(file, sizeof(file), CONFDIR "/%s/%s", driver_name, filename);
     if (!(f = fopen(file, "w"))) {
         printf("Unable to create file %s\n", filename);
         return -1;
@@ -1115,21 +1071,12 @@ void copy_file(char *file) {
 
     if (realname[0] != '\0') {
         strcpy(newname, realname);
-        if (dir) {
-            strcpy(realname, dir);
-            strcat(realname, "/");
-            strcat(realname, newname);
-        }
+        if (dir)
+            snprintf(realname, sizeof(realname), "%s/%s", dir, newname);
         lc(newname);
         if (!nocopy) {
-            strcpy(src, instdir);
-            strcat(src, "/");
-            strcat(src, realname);
-            strcpy(dst, CONFDIR);
-            strcat(dst, "/");
-            strcat(dst, driver_name);
-            strcat(dst, "/");
-            strcat(dst, newname);
+            snprintf(src, sizeof(src), "%s/%s", instdir, realname);
+            snprintf(dst, sizeof(dst), CONFDIR "/%s/%s", driver_name, newname);
             copy(src, dst, 0644);
         }
     }
@@ -1204,9 +1151,7 @@ int findfile(const char *dir, char *file) {
     DIR *d;
     struct dirent *dp;
 
-    strcpy(path, instdir);
-    strcat(path, "/");
-    strcat(path, dir);
+    snprintf(path, sizeof(path), "%s/%s", instdir, dir);
     if (!(d = opendir(path))) {
         printf("Unable to open %s\n", instdir);
         file[0] = '\0';
@@ -1242,9 +1187,7 @@ int rmtree(const char *dir) {
     d = opendir(dir);
     while ((dp = readdir(d))) {
         if (strcmp(dp->d_name, ".") != 0 || strcmp(dp->d_name, "..") != 0) {
-            strcpy(file, dir);
-            strcat(file, "/");
-            strcat(file, dp->d_name);
+            snprintf(file, sizeof(file), "%s/%s", dir, dp->d_name);
             unlink(file);
         }
     }
