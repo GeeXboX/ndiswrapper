@@ -1187,10 +1187,9 @@ int finddir(char *file) {
         strcpy(file_tmp, file);
         strcpy(file, sp[1]);
         strcpy(dir, sp[2]);
-        lc(trim(file));
+        trim(file);
         trim(dir);
-        lc(file_tmp);
-        if (file[0] != '\0' && dir[0] != '\0' && strcmp(file, file_tmp) == 0) {
+        if (file[0] != '\0' && dir[0] != '\0' && !strcasecmp(file, file_tmp)) {
             strcpy(file, dir);
             return 1;
         }
@@ -1216,9 +1215,7 @@ int findfile(const char *dir, char *file) {
 
     while ((dp = readdir(d))) {
         strcpy(file_tmp, dp->d_name);
-        lc(file_tmp);
-        lc(file);
-        if (strcmp(file, file_tmp) == 0) {
+        if (!strcasecmp(file, file_tmp)) {
             closedir(d);
             strcpy(file, dp->d_name);
             return 1;
