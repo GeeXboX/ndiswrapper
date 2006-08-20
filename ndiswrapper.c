@@ -257,7 +257,7 @@ int initStrings(void) {
     char lines[512][STRBUFFER];
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
-    char tok[DATABUFFER];
+    char *tok;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *s = NULL;
 
@@ -268,7 +268,7 @@ int initStrings(void) {
         return -1;
 
     // Split
-    strcpy(tok, s->data);
+    tok = s->data;
     strcpy(lines[i], strtok(tok, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
@@ -359,7 +359,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     char hkr[STRBUFFER];
     char p1[STRBUFFER], p2[STRBUFFER], p2_t[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
     char fixlist[STRBUFFER], sOld[STRBUFFER];
-    char tok[DATABUFFER];
+    char *tok;
     char *tmp, *tmp_orig;
     /* patterns */
     const char *ps1 = "([^,]*),([^,]*),([^,]*),([^,]*),(.*)";
@@ -376,7 +376,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     }
 
     // Split
-    strcpy(tok, reg->data);
+    tok = reg->data;
     strcpy(lines[i], strtok(tok, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
@@ -491,7 +491,7 @@ int parseVersion(void) {
     char lines[512][STRBUFFER];
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
-    char tok[DATABUFFER];
+    char *tok;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *s = NULL;
 
@@ -502,7 +502,7 @@ int parseVersion(void) {
         return -1;
 
     // Split
-    strcpy(tok, s->data);
+    tok = s->data;
     strcpy(lines[i], strtok(tok, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
@@ -542,7 +542,7 @@ int parseMfr(void) {
     char flavours[512][STRBUFFER];
     char sp[2][STRBUFFER];
     char line[STRBUFFER], ver[STRBUFFER];
-    char tok[DATABUFFER];
+    char *tok;
     char section[STRBUFFER] = "";
     char flavour[STRBUFFER], flav[STRBUFFER], flav_tmp[STRBUFFER];
     char *tmp, *tmp_orig;
@@ -555,7 +555,7 @@ int parseMfr(void) {
         return -1;
 
     // Split
-    strcpy(tok, manu->data);
+    tok = manu->data;
     strcpy(lines[i], strtok(tok, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
@@ -575,7 +575,7 @@ int parseMfr(void) {
             flavour[0] = '\0';
             // Split
             k = 0;
-            strcpy(tok, keyval[1]);
+            tok = keyval[1];
             strcpy(flavours[k], strtok(tok, ","));
             while ((tmp = strtok(NULL, ",")) != NULL) {
                 stripquotes(trim(tmp));
@@ -628,7 +628,7 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     char lines[512][STRBUFFER];
     char keyval[2][STRBUFFER];
     char section[STRBUFFER], id[STRBUFFER];
-    char tok[DATABUFFER];
+    char *tok;
     char vendor[STRBUFFER], device[STRBUFFER], subvendor[STRBUFFER], subdevice[STRBUFFER];
     char *tmp, *tmp_orig;
     struct DEF_SECTION *vend = NULL;
@@ -640,7 +640,7 @@ int parseVendor(const char *flavour, const char *vendor_name) {
         return -1;
 
     // Split
-    strcpy(tok, vend->data);
+    tok = vend->data;
     strcpy(lines[i], strtok(tok, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
@@ -715,7 +715,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     char sec[STRBUFFER], addreg[STRBUFFER], reg[STRBUFFER];
     char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER];
     char ver[STRBUFFER], provider[STRBUFFER], providerstring[STRBUFFER];
-    char tok[DATABUFFER];
+    char *tok;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *dev = NULL;
     FILE *f;
@@ -753,7 +753,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     }
 
     // Split
-    strcpy(tok, dev->data);
+    tok = dev->data;
     strcpy(lines[i], strtok(tok, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
@@ -822,7 +822,7 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     // Split
     i = 0;
-    strcpy(tok, addreg);
+    tok = addreg;
     strcpy(lines[i], strtok(tok, ","));
     while ((tmp = strtok(NULL, ",")) != NULL)
         strcpy(lines[++i], tmp);
@@ -841,7 +841,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     for (k = 0; k < push; k++) {
         // Split
         i = 0;
-        strcpy(tok, copy_files[k]);
+        tok = copy_files[k];
         strcpy(lines[i], strtok(tok, ","));
         while ((tmp = strtok(NULL, ",")) != NULL)
             strcpy(lines[++i], tmp);
@@ -1038,7 +1038,7 @@ int copyfiles(const char *copy_name) {
     char lines[512][STRBUFFER];
     char files[512][STRBUFFER];
     char line[STRBUFFER], file[STRBUFFER];
-    char tok[DATABUFFER];
+    char *tok;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *copy = NULL;
 
@@ -1057,7 +1057,7 @@ int copyfiles(const char *copy_name) {
     }
 
     // Split
-    strcpy(tok, copy->data);
+    tok = copy->data;
     strcpy(lines[i], strtok(tok, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
@@ -1071,7 +1071,7 @@ int copyfiles(const char *copy_name) {
 
         // Split
         k = 0;
-        strcpy(tok, copy->data);
+        tok = copy->data;
         strcpy(files[k], strtok(tok, ","));
         while ((tmp = strtok(NULL, ",")) != NULL)
             strcpy(lines[++k], tmp);
@@ -1165,7 +1165,7 @@ int finddir(char *file) {
     char lines[512][STRBUFFER];
     char line[STRBUFFER];
     char file_tmp[STRBUFFER], dir[STRBUFFER];
-    char tok[DATABUFFER];
+    char *tok;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *sourcedisksfiles = NULL;
 
@@ -1178,7 +1178,7 @@ int finddir(char *file) {
     }
 
     // Split
-    strcpy(tok, sourcedisksfiles->data);
+    tok = sourcedisksfiles->data;
     strcpy(lines[i], strtok(tok, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
