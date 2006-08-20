@@ -1371,10 +1371,13 @@ int regex(const char *str_request, const char *str_regex, char rmatch[][STRBUFFE
                         strncpy(text, &str_request[start], size);
                         text[size] = '\0';
                         strcpy(rmatch[i], text);
+                        free(text);
                     }
                 }
+		free(pmatch);
                 return 1;
             }
+	    free(pmatch);
         }
     }
     rmatch[0][0] = '\0';
