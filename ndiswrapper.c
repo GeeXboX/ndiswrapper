@@ -218,7 +218,7 @@ int isInstalled(const char *name) {
 int loadinf(const char *filename) {
     char s[DATABUFFER];
     char val[STRBUFFER];
-    char *start, *end;
+    char *lbracket, *rbracket;
     FILE *f;
     
     if(!sections)
@@ -235,13 +235,13 @@ int loadinf(const char *filename) {
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
 	    strcpy(sections[nb_sections-1]->name,"none");
 	}
-        start = strchr(s,'[');
-        end = strchr(s,']');
-        if (start && end) {
+        lbracket = strchr(s,'[');
+        rbracket = strchr(s,']');
+        if (lbracket && rbracket) {
             nb_sections++;
 	    sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
-            strncpy(val, start+1, end-start-1);
-            val[end-start-1] = '\0';
+            strncpy(val, lbracket+1, rbracket-lbracket-1);
+            val[rbracket-lbracket-1] = '\0';
             strcpy(sections[nb_sections-1]->name, val);
         }
         else
