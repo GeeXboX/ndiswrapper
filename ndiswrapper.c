@@ -288,14 +288,12 @@ int initStrings(void) {
 
 void processPCIFuzz(void) {
     unsigned int i;
-    char dev[STRBUFFER];
     char bl[STRBUFFER];
     char src[STRBUFFER], dst[STRBUFFER];
 
     for (i = 0; i < nb_fuzzlist; i++) {
-        strcpy(dev, fuzzlist[i].key);
-        if (strcmp(dev, fuzzlist[i].val) != 0) {
-            strcpy(bl, dev);
+        if (strcmp(fuzzlist[i].key, fuzzlist[i].val) != 0) {
+            strcpy(bl, fuzzlist[i].key);
             getBuslist(bl);
 
             /* source file */
@@ -313,7 +311,7 @@ void processPCIFuzz(void) {
             strcat(dst, "/");
             strcat(dst, driver_name);
             strcat(dst, "/");
-            strcat(dst, dev);
+            strcat(dst, fuzzlist[i].key);
             strcat(dst, ".");
             strcat(dst, bl);
             strcat(dst, ".conf");
