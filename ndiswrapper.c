@@ -32,7 +32,7 @@
 #include <sys/stat.h>   /* stat */
 #include <dirent.h>     /* opendir closedir readdir */
 #include <regex.h>      /* regexec regfree regcomp */
-#include <string.h>     /* strcat strcpy strcmp strlen strncpy */
+#include <string.h>     /* strcat strcpy strcmp strcasecmp strlen strncpy */
 
 #include "ndiswrapper.h"
 
@@ -707,7 +707,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     char param_tab[STRBUFFER][STRBUFFER];
     char line[STRBUFFER];
     char keyval[2][STRBUFFER];
-    char sec[STRBUFFER], addreg[STRBUFFER], key[STRBUFFER], reg[STRBUFFER];
+    char sec[STRBUFFER], addreg[STRBUFFER], reg[STRBUFFER];
     char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER];
     char ver[STRBUFFER], provider[STRBUFFER], providerstring[STRBUFFER];
     char tok[DATABUFFER];
@@ -759,15 +759,13 @@ int parseDevice(const char *flavour, const char *device_sect,
         trim(remComment(line));
         getKeyVal(line, keyval);
         if (keyval[0][0] != '\0') {
-            strcpy(key, keyval[0]);
-            lc(key);
-            if (strcmp(key, "addreg") == 0)
+            if (!strcasecmp(keyval[0], "addreg"))
                 strcpy(addreg, keyval[1]);
-            else if (strcmp(key, "copyfiles") == 0) {
+            else if (!strcasecmp(keyval[0], "copyfiles")) {
                 strcpy(copy_files[push], keyval[1]);
                 push++;
             }
-            else if (strcmp(key, "BusType"))
+            else if (!strcasecmp(keyval[0], "BusType"))
                 def_strings(keyval[0], keyval[1]);
         }
     }
