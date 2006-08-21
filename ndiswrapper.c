@@ -1107,8 +1107,6 @@ int finddir(char *file) {
     int i = 0, j;
     char sp[3][STRBUFFER];
     char lines[512][STRBUFFER];
-    char line[STRBUFFER];
-    char file_tmp[STRBUFFER], dir[STRBUFFER];
     struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *sourcedisksfiles = NULL;
@@ -1131,16 +1129,12 @@ int finddir(char *file) {
 
     j = i + 1;
     for (i = 0; i < j; i++) {
-        strcpy(line, lines[i]);
-        trim(remComment(line));
-        regex(line, "(.+)=.+,+(.*)", sp);
-        strcpy(file_tmp, file);
-        strcpy(file, sp[1]);
-        strcpy(dir, sp[2]);
-        trim(file);
-        trim(dir);
-        if (file[0] != '\0' && dir[0] != '\0' && !strcasecmp(file, file_tmp)) {
-            strcpy(file, dir);
+        trim(remComment(lines[i]));
+        regex(lines[i], "(.+)=.+,+(.*)", sp);
+        trim(sp[1]);
+        trim(sp[2]);
+        if (sp[1][0] != '\0' && sp[2][0] != '\0' && !strcasecmp(sp[1], file)) {
+            strcpy(file, sp[2]);
             return 1;
         }
     }
