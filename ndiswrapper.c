@@ -326,7 +326,6 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     int found = 0, gotParam = 0;
     char lines[512][STRBUFFER];
     char ps[6][STRBUFFER];
-    char line[STRBUFFER];
     char param[STRBUFFER], param_t[STRBUFFER];
     char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
     char p1[STRBUFFER], p2[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
@@ -357,10 +356,9 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     
     j = i + 1;
     for (i = 0; i < j; i++) {
-        strcpy(line, lines[i]);
-        trim(remComment(line));
-        if (strcmp(line, "") != 0) {
-            regex(line, ps1, ps);
+        trim(remComment(lines[i]));
+        if (strcmp(lines[i], "") != 0) {
+            regex(lines[i], ps1, ps);
             strcpy(p1, ps[2]);
             strcpy(p2, ps[3]);
             strcpy(p3, ps[4]);
@@ -507,9 +505,9 @@ int parseMfr(void) {
     char lines[512][STRBUFFER];
     char flavours[512][STRBUFFER];
     char sp[2][STRBUFFER];
-    char line[STRBUFFER], ver[STRBUFFER];
+    char ver[STRBUFFER];
     char section[STRBUFFER] = "";
-    char flavour[STRBUFFER], flav[STRBUFFER];
+    char flavour[STRBUFFER];
     struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *manu = NULL;
@@ -529,9 +527,8 @@ int parseMfr(void) {
 
     j = i + 1;
     for (i = 0; i < j; i++) {
-        strcpy(line, lines[i]);
-        remComment(line);
-        getKeyVal(line, keyval);
+        remComment(lines[i]);
+        getKeyVal(lines[i], keyval);
 
         strcpy(ver, "Provider");
         getVersion(ver);
@@ -557,19 +554,17 @@ int parseMfr(void) {
             else {
                 l = k + 1;
                 for (k = 1; k < l; k++) {
-                    strcpy(flav, flavours[k]);
-                    regex(flav, "\\s*(\\S+)\\s*", sp);
-                    strcpy(flav, sp[1]);
-                    if (!strcasecmp(flav, "NT.5.1")) {
+                    regex(flavours[k], "\\s*(\\S+)\\s*", sp);
+                    if (!strcasecmp(sp[1], "NT.5.1")) {
                         // This is the best (XP)
-                        snprintf(section, sizeof(section), "%s.%s", flavours[0], flav);
-                        strcpy(flavour, flav);
+                        snprintf(section, sizeof(section), "%s.%s", flavours[0], sp[1]);
+                        strcpy(flavour, sp[1]);
                     }
                     else {
-                        if (!strncasecmp(flav, "NT", 2) && section[0] == '\0') {
+                        if (!strncasecmp(sp[1], "NT", 2) && section[0] == '\0') {
                             // This is the second best (win2k)
-                            snprintf(section, sizeof(section), "%s.%s", flavours[0], flav);
-                            strcpy(flavour, flav);
+                            snprintf(section, sizeof(section), "%s.%s", flavours[0], sp[1]);
+                            strcpy(flavour, sp[1]);
                         }
                     }
                 }
@@ -672,9 +667,8 @@ int parseDevice(const char *flavour, const char *device_sect,
     char lines[512][STRBUFFER];
     char copy_files[512][STRBUFFER];
     char param_tab[STRBUFFER][STRBUFFER];
-    char line[STRBUFFER];
     char keyval[2][STRBUFFER];
-    char sec[STRBUFFER], addreg[STRBUFFER], reg[STRBUFFER];
+    char sec[STRBUFFER], addreg[STRBUFFER];
     char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER];
     char ver[STRBUFFER], provider[STRBUFFER], providerstring[STRBUFFER];
     struct delim_s *delimlist;
@@ -719,9 +713,8 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     j = i + 1;
     for (i = 0; i < j; i++) {
-        strcpy(line, lines[i]);
-        trim(remComment(line));
-        getKeyVal(line, keyval);
+        trim(remComment(lines[i]));
+        getKeyVal(lines[i], keyval);
         if (keyval[0][0] != '\0') {
             if (!strcasecmp(keyval[0], "addreg"))
                 strcpy(addreg, keyval[1]);
@@ -781,9 +774,8 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     j = i + 1;
     for (i = 0; i < j; i++) {
-        strcpy(reg, lines[i]);
-        trim(reg);
-        addReg(reg, param_tab, &par_k);
+        trim(lines[i]);
+        addReg(lines[i], param_tab, &par_k);
     }
     /* sort and unify before writing */
     unisort(param_tab, &par_k);
@@ -799,9 +791,8 @@ int parseDevice(const char *flavour, const char *device_sect,
 
         j = i + 1;
         for (i = 0; i < j; i++) {
-            strcpy(file, lines[i]);
-            trim(file);
-            copyfiles(file);
+            trim(lines[i]);
+            copyfiles(lines[i]);
         }
     }
     free(tmp_orig);
@@ -988,7 +979,6 @@ int copyfiles(const char *copy_name) {
     char sp[2][STRBUFFER];
     char lines[512][STRBUFFER];
     char files[512][STRBUFFER];
-    char line[STRBUFFER], file[STRBUFFER];
     struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *copy = NULL;
@@ -1016,9 +1006,8 @@ int copyfiles(const char *copy_name) {
 
     j = i + 1;
     for (i = 0; i < j; i++) {
-        strcpy(line, lines[i]);
-        trim(line);
-        if (line[0] == '[')
+        trim(lines[i]);
+        if (lines[i][0] == '[')
             break;
 
         // Split
@@ -1031,10 +1020,9 @@ int copyfiles(const char *copy_name) {
 
         l = k + 1;
         for (k = 0; k < l; k++) {
-            strcpy(file, files[k]);
-            trim(file);
-            if (strlen(file) > 0)
-                copy_file(file);
+            trim(files[k]);
+            if (strlen(files[k]) > 0)
+                copy_file(files[k]);
         }
     }
     free(tmp_orig);
