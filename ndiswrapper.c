@@ -1015,7 +1015,7 @@ int copyfiles(const char *copy_name) {
         delimlist = storedelim(copy->data, ',');
         strcpy(files[k], strtok(copy->data, ","));
         while ((tmp = strtok(NULL, ",")) != NULL)
-            strcpy(lines[++k], tmp);
+            strcpy(files[++k], tmp);
         restoredelim(delimlist, copy->data, ',');
 
         l = k + 1;
