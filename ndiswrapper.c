@@ -32,7 +32,7 @@
 #include <sys/stat.h>   /* stat */
 #include <dirent.h>     /* opendir closedir readdir */
 #include <regex.h>      /* regexec regfree regcomp */
-#include <string.h>     /* strcat strcpy strcmp strcasecmp strchr strrchr strlen strncpy */
+#include <string.h>     /* strcat strcpy strcmp strcasecmp strncasecmp strchr strrchr strlen strncpy */
 
 #include "ndiswrapper.h"
 
@@ -328,7 +328,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     char line[STRBUFFER];
     char param[STRBUFFER], param_t[STRBUFFER];
     char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
-    char p1[STRBUFFER], p2[STRBUFFER], p2_t[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
+    char p1[STRBUFFER], p2[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
     char fixlist[STRBUFFER], sOld[STRBUFFER];
     char *tok;
     char *tmp, *tmp_orig;
@@ -378,13 +378,11 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
                         type[0] = '\0';
                         val[0] = '\0';
                     }
-                    strcpy(p2_t, p2);
-                    lc(p2_t);
-                    if (strcmp(p2_t, "type") == 0) {
+                    if (!strcasecmp(p2, "type")) {
                         found++;
                         strcpy(type, p4);
                     }
-                    else if (strcmp(p2_t, "default") == 0) {
+                    else if (!strcasecmp(p2, "default")) {
                         found++;
                         strcpy(val, p4);
                     }
@@ -509,7 +507,7 @@ int parseMfr(void) {
     char line[STRBUFFER], ver[STRBUFFER];
     char *tok;
     char section[STRBUFFER] = "";
-    char flavour[STRBUFFER], flav[STRBUFFER], flav_tmp[STRBUFFER];
+    char flavour[STRBUFFER], flav[STRBUFFER];
     char *tmp, *tmp_orig;
     struct DEF_SECTION *manu = NULL;
 
@@ -557,16 +555,13 @@ int parseMfr(void) {
                     strcpy(flav, flavours[k]);
                     regex(flav, "\\s*(\\S+)\\s*", sp);
                     strcpy(flav, sp[1]);
-                    strcpy(flav_tmp, flav);
-                    uc(flav_tmp);
-                    if (strcmp(flav_tmp, "NT.5.1") == 0) {
+                    if (!strcasecmp(flav, "NT.5.1")) {
                         // This is the best (XP)
                         snprintf(section, sizeof(section), "%s.%s", flavours[0], flav);
                         strcpy(flavour, flav);
                     }
                     else {
-                        flav_tmp[2] = '\0';
-                        if (strcmp(flav_tmp, "NT") == 0 && section[0] == '\0') {
+                        if (!strncasecmp(flav, "NT", 2) && section[0] == '\0') {
                             // This is the second best (win2k)
                             snprintf(section, sizeof(section), "%s.%s", flavours[0], flav);
                             strcpy(flavour, flav);
@@ -1324,18 +1319,10 @@ int regex(const char *str_request, const char *str_regex, char rmatch[][STRBUFFE
 
 struct DEF_SECTION *getSection(const char *needle) {
     unsigned int i;
-    char sec[STRBUFFER];
-    char need[STRBUFFER];
 
-    strcpy(need, needle);
-    lc(need);
-
-    for (i = 0; i < nb_sections; i++) {
-        strcpy(sec, sections[i]->name);
-        lc(sec);
-        if (strcmp(sec, need) == 0)
+    for (i = 0; i < nb_sections; i++)
+        if (!strcasecmp(sections[i]->name, needle))
             return sections[i];
-    }
     return NULL;
 }
 
