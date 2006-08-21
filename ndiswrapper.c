@@ -250,7 +250,7 @@ int initStrings(void) {
     char lines[512][STRBUFFER];
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
-    char *tok;
+    struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *s = NULL;
 
@@ -261,12 +261,13 @@ int initStrings(void) {
         return -1;
 
     // Split
-    tok = s->data;
-    strcpy(lines[i], strtok(tok, "\n"));
+    delimlist = storedelim(s->data, '\n');
+    strcpy(lines[i], strtok(s->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
     free(tmp_orig);
-
+    restoredelim(delimlist, s->data, '\n');
+    
     j = i + 1;
     for (i = 0; i < j; i++) {
         remComment(lines[i]);
@@ -330,7 +331,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
     char p1[STRBUFFER], p2[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
     char fixlist[STRBUFFER], sOld[STRBUFFER];
-    char *tok;
+    struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     /* patterns */
     const char *ps1 = "([^,]*),([^,]*),([^,]*),([^,]*),(.*)";
@@ -347,12 +348,13 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     }
 
     // Split
-    tok = reg->data;
-    strcpy(lines[i], strtok(tok, "\n"));
+    delimlist = storedelim(reg->data, '\n');
+    strcpy(lines[i], strtok(reg->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
     free(tmp_orig);
-
+    restoredelim(delimlist, reg->data, '\n');
+    
     j = i + 1;
     for (i = 0; i < j; i++) {
         strcpy(line, lines[i]);
@@ -454,7 +456,7 @@ int parseVersion(void) {
     char lines[512][STRBUFFER];
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
-    char *tok;
+    struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *s = NULL;
 
@@ -465,11 +467,12 @@ int parseVersion(void) {
         return -1;
 
     // Split
-    tok = s->data;
-    strcpy(lines[i], strtok(tok, "\n"));
+    delimlist = storedelim(s->data, '\n');
+    strcpy(lines[i], strtok(s->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
     free(tmp_orig);
+    restoredelim(delimlist, s->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -518,10 +521,11 @@ int parseMfr(void) {
         return -1;
 
     // Split
-    tok = manu->data;
-    strcpy(lines[i], strtok(tok, "\n"));
+    delimlist = storedelim(manu->data, '\n');
+    strcpy(lines[i], strtok(manu->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
+    restoredelim(delimlist, manu->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -538,12 +542,13 @@ int parseMfr(void) {
             flavour[0] = '\0';
             // Split
             k = 0;
-            tok = keyval[1];
-            strcpy(flavours[k], strtok(tok, ","));
+            delimlist = storedelim(keyval[1], ',');
+            strcpy(flavours[k], strtok(keyval[1], ","));
             while ((tmp = strtok(NULL, ",")) != NULL) {
                 stripquotes(trim(tmp));
                 strcpy(flavours[++k], tmp);
             }
+            restoredelim(delimlist, keyval[1], ',');
 
             if (k == 0) {
                 // Vendor
@@ -584,8 +589,8 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     char lines[512][STRBUFFER];
     char keyval[2][STRBUFFER];
     char section[STRBUFFER], id[STRBUFFER];
-    char *tok;
     char vendor[STRBUFFER], device[STRBUFFER], subvendor[STRBUFFER], subdevice[STRBUFFER];
+    struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *vend = NULL;
 
@@ -596,11 +601,12 @@ int parseVendor(const char *flavour, const char *vendor_name) {
         return -1;
 
     // Split
-    tok = vend->data;
-    strcpy(lines[i], strtok(tok, "\n"));
+    delimlist = storedelim(vend->data, '\n');
+    strcpy(lines[i], strtok(vend->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
     free(tmp_orig);
+    restoredelim(delimlist, vend->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -671,7 +677,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     char sec[STRBUFFER], addreg[STRBUFFER], reg[STRBUFFER];
     char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER];
     char ver[STRBUFFER], provider[STRBUFFER], providerstring[STRBUFFER];
-    char *tok;
+    struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *dev = NULL;
     FILE *f;
@@ -705,10 +711,11 @@ int parseDevice(const char *flavour, const char *device_sect,
     }
 
     // Split
-    tok = dev->data;
-    strcpy(lines[i], strtok(tok, "\n"));
+    delimlist = storedelim(dev->data, '\n');
+    strcpy(lines[i], strtok(dev->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
+    restoredelim(delimlist, dev->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -768,8 +775,7 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     // Split
     i = 0;
-    tok = addreg;
-    strcpy(lines[i], strtok(tok, ","));
+    strcpy(lines[i], strtok(addreg, ","));
     while ((tmp = strtok(NULL, ",")) != NULL)
         strcpy(lines[++i], tmp);
 
@@ -787,8 +793,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     for (k = 0; k < push; k++) {
         // Split
         i = 0;
-        tok = copy_files[k];
-        strcpy(lines[i], strtok(tok, ","));
+        strcpy(lines[i], strtok(copy_files[k], ","));
         while ((tmp = strtok(NULL, ",")) != NULL)
             strcpy(lines[++i], tmp);
 
@@ -984,7 +989,7 @@ int copyfiles(const char *copy_name) {
     char lines[512][STRBUFFER];
     char files[512][STRBUFFER];
     char line[STRBUFFER], file[STRBUFFER];
-    char *tok;
+    struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *copy = NULL;
 
@@ -1003,10 +1008,11 @@ int copyfiles(const char *copy_name) {
     }
 
     // Split
-    tok = copy->data;
-    strcpy(lines[i], strtok(tok, "\n"));
+    delimlist = storedelim(copy->data, '\n');
+    strcpy(lines[i], strtok(copy->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
+    restoredelim(delimlist, copy->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -1017,10 +1023,11 @@ int copyfiles(const char *copy_name) {
 
         // Split
         k = 0;
-        tok = copy->data;
-        strcpy(files[k], strtok(tok, ","));
+        delimlist = storedelim(copy->data, ',');
+        strcpy(files[k], strtok(copy->data, ","));
         while ((tmp = strtok(NULL, ",")) != NULL)
             strcpy(lines[++k], tmp);
+        restoredelim(delimlist, copy->data, ',');
 
         l = k + 1;
         for (k = 0; k < l; k++) {
@@ -1102,7 +1109,7 @@ int finddir(char *file) {
     char lines[512][STRBUFFER];
     char line[STRBUFFER];
     char file_tmp[STRBUFFER], dir[STRBUFFER];
-    char *tok;
+    struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *sourcedisksfiles = NULL;
 
@@ -1115,11 +1122,12 @@ int finddir(char *file) {
     }
 
     // Split
-    tok = sourcedisksfiles->data;
-    strcpy(lines[i], strtok(tok, "\n"));
+    delimlist = storedelim(sourcedisksfiles->data, '\n');
+    strcpy(lines[i], strtok(sourcedisksfiles->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
     free(tmp_orig);
+    restoredelim(delimlist, sourcedisksfiles->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -1350,6 +1358,38 @@ void unisort(char tab[][STRBUFFER], int *last) {
         }
     }
 }
+
+struct delim_s *storedelim(const char *input, const char delim){
+    struct delim_s *delimlist=NULL, *delimend=NULL;
+    char *ref, *tmp;
+    if(!input)
+        return NULL;
+    tmp = strchr(input, delim);
+    while(tmp){
+        if(delimend){
+            delimend->next = (struct delim_s*)malloc(sizeof(struct delim_s));
+            delimend = delimend->next;
+        }
+        else{
+            delimlist = delimend = (struct delim_s*)malloc(sizeof(struct delim_s));
+        }
+        delimend->next = NULL;
+        delimend->loc=strlen(input)-strlen(tmp);
+        ref=tmp+1;
+        tmp = strchr(ref, delim);
+    }
+    return delimlist;
+};
+
+void restoredelim(struct delim_s *delimlist, char *input, const char delim){
+    struct delim_s *next = delimlist;
+    while(delimlist){
+        input[delimlist->loc] = delim;
+        next = delimlist->next;
+        free(delimlist);
+        delimlist = next;
+    }
+};
 
 void usage(void) {
     printf("Usage: ndiswrapper OPTION\n\n");

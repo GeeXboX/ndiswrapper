@@ -55,6 +55,11 @@ struct DEF_FIXLIST {
     char m[16];
 };
 
+struct delim_s {
+        unsigned int loc;
+        struct delim_s *next;
+};
+
 /* inf installation */
 int install(const char *inf);
 int isInstalled(const char *name);
@@ -65,6 +70,8 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
                      const char *subvendor, const char *subdevice,
                      const char *bt);
 int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k);
+struct delim_s *storedelim(const char *input, const char delim);
+void restoredelim(struct delim_s *delimlist, char *input, const char delim);
 
 /* driver tools */
 int remove(const char *name);
