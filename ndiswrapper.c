@@ -1144,7 +1144,6 @@ int finddir(char *file) {
 
 int findfile(const char *dir, char *file) {
     char path[STRBUFFER];
-    char file_tmp[STRBUFFER];
     DIR *d;
     struct dirent *dp;
 
@@ -1156,8 +1155,7 @@ int findfile(const char *dir, char *file) {
     }
 
     while ((dp = readdir(d))) {
-        strcpy(file_tmp, dp->d_name);
-        if (!strcasecmp(file, file_tmp)) {
+        if (!strcasecmp(file, dp->d_name)) {
             closedir(d);
             strcpy(file, dp->d_name);
             return 1;
