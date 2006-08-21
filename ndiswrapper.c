@@ -157,7 +157,7 @@ int install(const char *inf) {
         mkdir(CONFDIR, 0777);
 
     printf("Installing %s\n", driver_name);
-    snprintf(install_dir, sizeof(install_dir), CONFDIR "/%s", driver_name);
+    snprintf(install_dir, sizeof(install_dir), "%s/%s", CONFDIR, driver_name);
     if (mkdir(install_dir, 0777) == -1) {
         printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
         return -1;
@@ -197,7 +197,7 @@ int isInstalled(const char *name) {
 
     d = opendir(CONFDIR);
     while ((dp = readdir(d))) {
-        snprintf(f_path, sizeof(f_path), CONFDIR "/%s", dp->d_name);
+        snprintf(f_path, sizeof(f_path), "%s/%s", CONFDIR, dp->d_name);
         stat(f_path, &st);
         if (S_ISDIR(st.st_mode) && !strcmp(name, dp->d_name)) {
             installed = 1;
@@ -290,10 +290,10 @@ void processPCIFuzz(void) {
             getBuslist(bl);
 
             /* source file */
-            snprintf(src, sizeof(src), CONFDIR "/%s/%s.%s.conf", driver_name, fuzzlist[i].val, bl);
+            snprintf(src, sizeof(src), "%s/%s/%s.%s.conf", CONFDIR, driver_name, fuzzlist[i].val, bl);
 
             /* destination link */
-            snprintf(dst, sizeof(dst), CONFDIR "/%s/%s.%s.conf", driver_name, fuzzlist[i].key, bl);
+            snprintf(dst, sizeof(dst), "%s/%s/%s.%s.conf", CONFDIR, driver_name, fuzzlist[i].key, bl);
 
             symlink(src, dst);
         }
@@ -433,7 +433,7 @@ int remove(const char *name) {
         return -1;
     }
     else {
-        snprintf(driver, sizeof(driver), CONFDIR "/%s", name);
+        snprintf(driver, sizeof(driver), "%s/%s", CONFDIR, name);
         if (rmtree(driver))
             return 0;
     }
@@ -747,7 +747,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     if (bus == WRAP_PCI_BUS || bus == WRAP_PCMCIA_BUS)
         addPCIFuzzEntry(device, vendor, subvendor, subdevice, bt);
 
-    snprintf(file, sizeof(file), CONFDIR "/%s/%s", driver_name, filename);
+    snprintf(file, sizeof(file), "%s/%s/%s", CONFDIR, driver_name, filename);
     if (!(f = fopen(file, "w"))) {
         printf("Unable to create file %s\n", filename);
         return -1;
@@ -1076,7 +1076,7 @@ void copy_file(char *file) {
         lc(newname);
         if (!nocopy) {
             snprintf(src, sizeof(src), "%s/%s", instdir, realname);
-            snprintf(dst, sizeof(dst), CONFDIR "/%s/%s", driver_name, newname);
+            snprintf(dst, sizeof(dst), "%s/%s/%s", CONFDIR, driver_name, newname);
             copy(src, dst, 0644);
         }
     }
