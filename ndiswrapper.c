@@ -508,9 +508,9 @@ int parseMfr(void) {
     char flavours[512][STRBUFFER];
     char sp[2][STRBUFFER];
     char line[STRBUFFER], ver[STRBUFFER];
-    char *tok;
     char section[STRBUFFER] = "";
     char flavour[STRBUFFER], flav[STRBUFFER];
+    struct delim_s *delimlist;
     char *tmp, *tmp_orig;
     struct DEF_SECTION *manu = NULL;
 
