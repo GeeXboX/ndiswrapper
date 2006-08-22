@@ -70,8 +70,6 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
                      const char *subvendor, const char *subdevice,
                      const char *bt);
 int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k);
-struct delim_s *storedelim(const char *input, const char delim);
-void restoredelim(struct delim_s *delimlist, char *input, const char delim);
 
 /* driver tools */
 int remove(const char *name);
@@ -120,6 +118,8 @@ int regex(const char *str_request, const char *str_regex,
           char rmatch[][STRBUFFER], ...);
 struct DEF_SECTION *getSection(const char *needle);
 void unisort(char tab[][STRBUFFER], int *last);
+struct delim_s *storedelim(const char *input, const char delim);
+void restoredelim(struct delim_s *delimlist, char *input, const char delim);
 void usage(void);
 
 #endif /* _NDISWRAPPER_H_ */

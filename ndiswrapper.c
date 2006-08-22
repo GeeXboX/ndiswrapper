@@ -1228,10 +1228,12 @@ char *substStr(char *s) {
 /*
  * Others
  * ------
- * - regex      : regular expressions
- * - getSection : get a section pointer
- * - unisort    : sort and unify a table
- * - usage      : help
+ * - regex        : regular expressions
+ * - getSection   : get a section pointer
+ * - unisort      : sort and unify a table
+ * - storedelim   : store specific delimiters position (from a char*) in a list
+ * - restoredelim : restore the delimiters (changed by strtok)
+ * - usage        : help
  *
  */
 
