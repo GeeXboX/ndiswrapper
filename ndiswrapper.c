@@ -139,7 +139,7 @@ int install(const char *inf) {
     slash = strrchr(inf,'/');
     if (!slash || !ext){
         printf("%s is not a valid inf filename, please provide in format /path/filename.inf\n",inf);
-	return -1;
+        return -1;
     }
     strncpy(driver_name, slash+1, ext-slash-1);
     driver_name[ext-slash] = '\0';
@@ -178,7 +178,7 @@ int install(const char *inf) {
     if(sections){
         for (i=0; i<nb_sections; i++)
             if(sections[i])
-		    free(sections[i]);
+                free(sections[i]);
         free(sections);
     }
     return 0;
@@ -215,7 +215,7 @@ int loadinf(const char *filename) {
     FILE *f;
     
     if(!sections)
-	return -1;
+        return -1;
     if ((f = fopen(filename, "r")) == NULL)
         return -1;
 
@@ -226,13 +226,13 @@ int loadinf(const char *filename) {
         if (!nb_sections){
             nb_sections++;
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
-	    strcpy(sections[nb_sections-1]->name,"none");
-	}
+            strcpy(sections[nb_sections-1]->name,"none");
+        }
         lbracket = strchr(s,'[');
         rbracket = strchr(s,']');
         if (lbracket && rbracket) {
             nb_sections++;
-	    sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
+            sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
             strncpy(val, lbracket+1, rbracket-lbracket-1);
             val[rbracket-lbracket-1] = '\0';
             strcpy(sections[nb_sections-1]->name, val);
@@ -572,7 +572,8 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     char lines[512][STRBUFFER];
     char keyval[2][STRBUFFER];
     char section[STRBUFFER], id[STRBUFFER];
-    char vendor[STRBUFFER], device[STRBUFFER], subvendor[STRBUFFER], subdevice[STRBUFFER];
+    char vendor[STRBUFFER], device[STRBUFFER];
+    char subvendor[STRBUFFER], subdevice[STRBUFFER];
     struct delim_s *delimlist;
     char *tmp;
     struct DEF_SECTION *vend = NULL;
@@ -1234,7 +1235,8 @@ char *substStr(char *s) {
  *
  */
 
-int regex(const char *str_request, const char *str_regex, char rmatch[][STRBUFFER], ...) {
+int regex(const char *str_request, const char *str_regex,
+          char rmatch[][STRBUFFER], ...) {
     // optional parameter
     va_list pp;
     va_start(pp, rmatch);
@@ -1271,10 +1273,10 @@ int regex(const char *str_request, const char *str_regex, char rmatch[][STRBUFFE
                         free(text);
                     }
                 }
-		free(pmatch);
+                free(pmatch);
                 return 1;
             }
-	    free(pmatch);
+            free(pmatch);
         }
     }
     rmatch[0][0] = '\0';

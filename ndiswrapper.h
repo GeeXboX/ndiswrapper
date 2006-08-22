@@ -56,8 +56,8 @@ struct DEF_FIXLIST {
 };
 
 struct delim_s {
-        unsigned int loc;
-        struct delim_s *next;
+    unsigned int loc;
+    struct delim_s *next;
 };
 
 /* inf installation */
@@ -116,7 +116,8 @@ char *remComment(char *s);
 char *substStr(char *s);
 
 /* others */
-int regex(const char *str_request, const char *str_regex, char rmatch[][STRBUFFER], ...);
+int regex(const char *str_request, const char *str_regex, 
+          char rmatch[][STRBUFFER], ...);
 struct DEF_SECTION *getSection(const char *needle);
 void unisort(char tab[][STRBUFFER], int *last);
 void usage(void);
