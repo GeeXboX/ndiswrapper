@@ -220,7 +220,7 @@ int loadinf(const char *filename) {
     if ((f = fopen(filename, "r")) == NULL)
         return -1;
 
-    while (fgets(s, FGETSBUFFER, f)) {
+    while (fgets(s, sizeof(s), f)) {
         /* Convert from unicode */
         //strcpy(s, regex(s, "s/\xff\xfe//")); // FIXME
         //strcpy(s, regex(s, "s/\0//")); // FIXME

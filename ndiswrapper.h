@@ -26,7 +26,6 @@
 #ifndef _NDISWRAPPER_H_
 #define _NDISWRAPPER_H_
 
-#define FGETSBUFFER       512
 #define STRBUFFER         256
 #define DATABUFFER        16384
 
