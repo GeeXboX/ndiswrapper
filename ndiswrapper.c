@@ -152,20 +152,20 @@ int install(const char *inf) {
         printf("%s is already installed. Use -e to remove it\n", driver_name);
         return -1;
     }
-    if ((dir = opendir(CONFDIR)) != NULL)
-        closedir(dir);
-    else
-        mkdir(CONFDIR, 0777);
-
-    printf("Installing %s\n", driver_name);
-    snprintf(install_dir, sizeof(install_dir), "%s/%s", CONFDIR, driver_name);
-    if (mkdir(install_dir, 0777) == -1) {
-        printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
-        return -1;
-    }
 
     sections = (struct DEF_SECTION**)malloc(STRBUFFER * sizeof(struct DEF_SECTION*));
     if(loadinf(inf)){
+        if ((dir = opendir(CONFDIR)) != NULL)
+            closedir(dir);
+        else
+            mkdir(CONFDIR, 0777);
+
+        printf("Installing %s\n", driver_name);
+        snprintf(install_dir, sizeof(install_dir), "%s/%s", CONFDIR, driver_name);
+        if (mkdir(install_dir, 0777) == -1) {
+            printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
+            return -1;
+        }
         initStrings();
         parseVersion();
         snprintf(dst, sizeof(dst), "%s/%s.inf", install_dir, driver_name);
@@ -213,16 +213,18 @@ int loadinf(const char *filename) {
     char s[STRBUFFER], val[STRBUFFER];
     char *lbracket, *rbracket;
     FILE *f;
+    int res = 0;
 
     if(!sections)
-        return -1;
+        return res;
     if ((f = fopen(filename, "r")) == NULL)
-        return -1;
+        return res;
 
     while (fgets(s, sizeof(s), f)) {
         /* Convert from unicode */
         //strcpy(s, regex(s, "s/\xff\xfe//")); // FIXME
         //strcpy(s, regex(s, "s/\0//")); // FIXME
+        res = 1;
         if (!nb_sections){
             nb_sections++;
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
@@ -241,17 +243,14 @@ int loadinf(const char *filename) {
             if (strlen(sections[nb_sections-1]->data) + strlen(s) < DATABUFFER)
                 strcat(sections[nb_sections-1]->data, s);
             else {
-                printf("Warning: data allocation insufficient for section %s\nAborting read of file: %s\n", sections[nb_sections-1]->name, filename);
-                for (; nb_sections > 0; nb_sections--)
-                    free(sections[nb_sections-1]);
-                free(sections);
-                fclose(f);
-                return -1;
+                printf("Error: memory allocation insufficient for section %s\nAborting read of suspicious file: %s\n", sections[nb_sections-1]->name, filename);
+                res = 0;
+                break;
             }
         }
     }
     fclose(f);
-    return 1;
+    return res;
 }
 
 int initStrings(void) {
