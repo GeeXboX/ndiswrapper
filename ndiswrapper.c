@@ -333,10 +333,6 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     char fixlist[STRBUFFER], sOld[STRBUFFER];
     struct delim_s *delimlist;
     char *tmp;
-    /* patterns */
-    const char *ps1 = "([^,]*),([^,]*),([^,]*),([^,]*),(.*)";
-    const char *ps2 = "ndi\\\\params\\\\(.+)";
-    const char *ps3 = "(.+)\\\\.*";
     struct DEF_SECTION *reg = NULL;
 
     reg = getSection(reg_name);
@@ -357,7 +353,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     for (i = 0; i < j; i++) {
         trim(remComment(lines[i]));
         if (strcmp(lines[i], "") != 0) {
-            regex(lines[i], ps1, ps);
+            regex(lines[i], PS1, ps);
             free(lines[i]);
             strcpy(p1, ps[2]);
             strcpy(p2, ps[3]);
@@ -368,9 +364,9 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
             stripquotes(substStr(trim(p3)));
             stripquotes(substStr(trim(p4)));
             if (p1[0] != '\0') {
-                if (regex(p1, ps2, ps, ICASE)) {
+                if (regex(p1, PS2, ps, ICASE)) {
                     strcpy(param_t, ps[1]);
-                    regex(param_t, ps3, ps);
+                    regex(param_t, PS3, ps);
                     strcpy(param_t, ps[1]);
                     if (strcmp(param, param_t) != 0) {
                         found = 0;
@@ -625,12 +621,8 @@ int parseVendor(const char *flavour, const char *vendor_name) {
 int parseID(const char *id, int *bt, char *vendor,
             char *device, char *subvendor, char *subdevice) {
     char ps[5][STRBUFFER];
-    /* patterns */
-    const char *ps1 = "PCI\\\\VEN_(\\w+)&DEV_(\\w+)&SUBSYS_(\\w{4})(\\S{4})";
-    const char *ps2 = "PCI\\\\VEN_(\\w+)&DEV_(\\w+)";
-    const char *ps3 = "USB\\\\VID_(\\w+)&PID_(\\w+)";
 
-    regex(id, ps1, ps);
+    regex(id, PS4, ps);
     if (ps[0][0] != '\0') {
         *bt = WRAP_PCI_BUS;
         strcpy(vendor, ps[1]);
@@ -639,7 +631,7 @@ int parseID(const char *id, int *bt, char *vendor,
         strcpy(subdevice, ps[3]);
     }
     else {
-        regex(id, ps2, ps);
+        regex(id, PS5, ps);
         if (ps[0][0] != '\0') {
             *bt = WRAP_PCI_BUS;
             strcpy(vendor, ps[1]);
@@ -648,7 +640,7 @@ int parseID(const char *id, int *bt, char *vendor,
             subdevice[0] = '\0';
         }
         else {
-            regex(id, ps3, ps);
+            regex(id, PS6, ps);
             if (ps[0][0] != '\0') {
                 *bt = WRAP_USB_BUS;
                 strcpy(vendor, ps[1]);
