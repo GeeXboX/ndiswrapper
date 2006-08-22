@@ -127,12 +127,12 @@ int install(const char *inf) {
     DIR *dir;
     unsigned int i;
     char *slash, *ext;
-    
+
     if (!file_exists(inf)) {
         printf("Unable to locate %s\n", inf);
         return -1;
     }
-    
+
     ext = strstr(inf,".inf");
     if (!ext)
         ext=strstr(inf,".INF");
@@ -213,7 +213,7 @@ int loadinf(const char *filename) {
     char val[STRBUFFER];
     char *lbracket, *rbracket;
     FILE *f;
-    
+
     if(!sections)
         return -1;
     if ((f = fopen(filename, "r")) == NULL)
@@ -264,7 +264,7 @@ int initStrings(void) {
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
     restoredelim(delimlist, s->data, '\n');
-    
+
     j = i + 1;
     for (i = 0; i < j; i++) {
         remComment(lines[i]);
@@ -347,7 +347,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
     restoredelim(delimlist, reg->data, '\n');
-    
+
     j = i + 1;
     for (i = 0; i < j; i++) {
         trim(remComment(lines[i]));
@@ -489,7 +489,7 @@ int parseMfr(void) {
     /* Examples:
        Vendor
        Vendor,ME,NT,NT.5.1
-       Vendor.NTx86 
+       Vendor.NTx86
     */
     int i = 0, j, k, l, res;
     char keyval[2][STRBUFFER];

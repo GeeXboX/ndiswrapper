@@ -116,7 +116,7 @@ char *remComment(char *s);
 char *substStr(char *s);
 
 /* others */
-int regex(const char *str_request, const char *str_regex, 
+int regex(const char *str_request, const char *str_regex,
           char rmatch[][STRBUFFER], ...);
 struct DEF_SECTION *getSection(const char *needle);
 void unisort(char tab[][STRBUFFER], int *last);
