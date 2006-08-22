@@ -251,10 +251,8 @@ int initStrings(void) {
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
     struct delim_s *delimlist;
-    char *tmp, *tmp_orig;
+    char *tmp;
     struct DEF_SECTION *s = NULL;
-
-    tmp_orig = tmp = malloc(STRBUFFER);
 
     s = getSection("strings");
     if (s == NULL)
@@ -265,7 +263,6 @@ int initStrings(void) {
     strcpy(lines[i], strtok(s->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
-    free(tmp_orig);
     restoredelim(delimlist, s->data, '\n');
     
     j = i + 1;
@@ -331,14 +328,12 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     char p1[STRBUFFER], p2[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
     char fixlist[STRBUFFER], sOld[STRBUFFER];
     struct delim_s *delimlist;
-    char *tmp, *tmp_orig;
+    char *tmp;
     /* patterns */
     const char *ps1 = "([^,]*),([^,]*),([^,]*),([^,]*),(.*)";
     const char *ps2 = "ndi\\\\params\\\\(.+)";
     const char *ps3 = "(.+)\\\\.*";
     struct DEF_SECTION *reg = NULL;
-
-    tmp_orig = tmp = malloc(STRBUFFER);
 
     reg = getSection(reg_name);
     if (reg == NULL) {
@@ -351,7 +346,6 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     strcpy(lines[i], strtok(reg->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
-    free(tmp_orig);
     restoredelim(delimlist, reg->data, '\n');
     
     j = i + 1;
@@ -455,10 +449,8 @@ int parseVersion(void) {
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
     struct delim_s *delimlist;
-    char *tmp, *tmp_orig;
+    char *tmp;
     struct DEF_SECTION *s = NULL;
-
-    tmp_orig = tmp = malloc(STRBUFFER);
 
     s = getSection("version");
     if (!s)
@@ -469,7 +461,6 @@ int parseVersion(void) {
     strcpy(lines[i], strtok(s->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
-    free(tmp_orig);
     restoredelim(delimlist, s->data, '\n');
 
     j = i + 1;
@@ -509,10 +500,8 @@ int parseMfr(void) {
     char section[STRBUFFER] = "";
     char flavour[STRBUFFER];
     struct delim_s *delimlist;
-    char *tmp, *tmp_orig;
+    char *tmp;
     struct DEF_SECTION *manu = NULL;
-
-    tmp_orig = tmp = malloc(STRBUFFER);
 
     manu = getSection("manufacturer");
     if (!manu)
@@ -574,7 +563,6 @@ int parseMfr(void) {
                 return res;
         }
     }
-    free(tmp_orig);
     return 0;
 }
 
@@ -586,10 +574,8 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     char section[STRBUFFER], id[STRBUFFER];
     char vendor[STRBUFFER], device[STRBUFFER], subvendor[STRBUFFER], subdevice[STRBUFFER];
     struct delim_s *delimlist;
-    char *tmp, *tmp_orig;
+    char *tmp;
     struct DEF_SECTION *vend = NULL;
-
-    tmp_orig = tmp = malloc(STRBUFFER);
 
     vend = getSection(vendor_name);
     if (vend == NULL)
@@ -600,7 +586,6 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     strcpy(lines[i], strtok(vend->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
-    free(tmp_orig);
     restoredelim(delimlist, vend->data, '\n');
 
     j = i + 1;
@@ -672,11 +657,9 @@ int parseDevice(const char *flavour, const char *device_sect,
     char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER];
     char ver[STRBUFFER], provider[STRBUFFER], providerstring[STRBUFFER];
     struct delim_s *delimlist;
-    char *tmp, *tmp_orig;
+    char *tmp;
     struct DEF_SECTION *dev = NULL;
     FILE *f;
-
-    tmp_orig = tmp = malloc(STRBUFFER);
 
     /* for RNDIS INF file (for USR5420), vendor section names device
        section as RNDIS.NT.5.1, but copyfiles section is RNDIS.NT, so
@@ -795,7 +778,6 @@ int parseDevice(const char *flavour, const char *device_sect,
             copyfiles(lines[i]);
         }
     }
-    free(tmp_orig);
     fclose(f);
     return 1;
 }
@@ -980,10 +962,8 @@ int copyfiles(const char *copy_name) {
     char lines[512][STRBUFFER];
     char files[512][STRBUFFER];
     struct delim_s *delimlist;
-    char *tmp, *tmp_orig;
+    char *tmp;
     struct DEF_SECTION *copy = NULL;
-
-    tmp_orig = tmp = malloc(STRBUFFER);
 
     regex(copy_name, "^@(.*)", sp);
     if (sp[0][0] != '\0') {
@@ -1025,7 +1005,6 @@ int copyfiles(const char *copy_name) {
                 copy_file(files[k]);
         }
     }
-    free(tmp_orig);
     return 0;
 }
 
@@ -1096,10 +1075,8 @@ int finddir(char *file) {
     char sp[3][STRBUFFER];
     char lines[512][STRBUFFER];
     struct delim_s *delimlist;
-    char *tmp, *tmp_orig;
+    char *tmp;
     struct DEF_SECTION *sourcedisksfiles = NULL;
-
-    tmp_orig = tmp = malloc(STRBUFFER);
 
     sourcedisksfiles = getSection("sourcedisksfiles");
     if (!sourcedisksfiles) {
@@ -1112,7 +1089,6 @@ int finddir(char *file) {
     strcpy(lines[i], strtok(sourcedisksfiles->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
         strcpy(lines[++i], tmp);
-    free(tmp_orig);
     restoredelim(delimlist, sourcedisksfiles->data, '\n');
 
     j = i + 1;
