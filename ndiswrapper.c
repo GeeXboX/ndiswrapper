@@ -210,8 +210,7 @@ int isInstalled(const char *name) {
 }
 
 int loadinf(const char *filename) {
-    char s[DATABUFFER];
-    char val[STRBUFFER];
+    char s[STRBUFFER], val[STRBUFFER];
     char *lbracket, *rbracket;
     FILE *f;
 
@@ -238,8 +237,18 @@ int loadinf(const char *filename) {
             val[rbracket-lbracket-1] = '\0';
             strcpy(sections[nb_sections-1]->name, val);
         }
-        else
-            strcat(sections[nb_sections-1]->data, s);
+        else {
+            if (strlen(sections[nb_sections-1]->data) + strlen(s) < DATABUFFER)
+                strcat(sections[nb_sections-1]->data, s);
+            else {
+                printf("Warning: data allocation insufficient for section %s\nAborting read of file: %s\n", sections[nb_sections-1]->name, filename);
+                for (; nb_sections > 0; nb_sections--)
+                    free(sections[nb_sections-1]);
+                free(sections);
+                fclose(f);
+                return -1;
+            }
+        }
     }
     fclose(f);
     return 1;
