@@ -78,29 +78,29 @@ int main(int argc, char **argv) {
         return res;
     }
 
-    if (strcmp(argv[1], "-i") == 0 && argc == 3)
+    if (!strcmp(argv[1], "-i") && argc == 3)
         res = install(argv[2]);
 /*
-    else if (strcmp(argv[1], "-d") == 0 && argc == 4)
+    else if (!strcmp(argv[1], "-d") && argc == 4)
         res = devid_driver(argv[2], argv[3]);
 */
-    else if (strcmp(argv[1], "-e") == 0 && argc == 3)
+    else if (!strcmp(argv[1], "-e") && argc == 3)
         res = remove(argv[2]);
 /*
-    else if (strcmp(argv[1], "-l") == 0 && argc == 2)
+    else if (!strcmp(argv[1], "-l") && argc == 2)
         res = list();
-    else if (strcmp(argv[1], "-m") == 0 && argc == 2)
+    else if (!strcmp(argv[1], "-m") && argc == 2)
         res = modalias();
-    else if (strcmp(argv[1], "-v") == 0 && argc == 2) {
+    else if (!strcmp(argv[1], "-v") && argc == 2) {
         printf("utils ");
         system("/sbin/loadndisdriver -v");
         printf("driver ");
         system("modinfo ndiswrapper | grep -E '^version|^vermagic'");
         res = 0;
     }
-    else if (strcmp(argv[1], "-da") == 0 && argc == 2)
+    else if (!strcmp(argv[1], "-da") && argc == 2)
         res = genmoddevconf(0);
-    else if (strcmp(argv[1], "-di") == 0 && argc == 2)
+    else if (!strcmp(argv[1], "-di") && argc == 2)
         res = genmoddevconf(1);
 */
     else {
@@ -312,7 +312,7 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
 
     strcpy(fuzz, s);
     getFuzzlist(fuzz);
-    if (subvendor[0] == '\0' || strcmp(fuzz, s) == 0) {
+    if (subvendor[0] == '\0' || !strcmp(fuzz, s)) {
         strcpy(s2, s);
         if (subvendor[0] != '\0') {
             snprintf(s2, sizeof(s2), "%s:%s:%s", s, subvendor, subdevice);
@@ -476,15 +476,15 @@ int parseVersion(void) {
         remComment(lines[i]);
         getKeyVal(lines[i], keyval);
         free(lines[i]);
-        if (strcmp(keyval[0], "Provider") == 0) {
+        if (!strcmp(keyval[0], "Provider")) {
             stripquotes(keyval[1]);
             def_version(keyval[0], keyval[1]);
         }
-        if (strcmp(keyval[0], "DriverVer") == 0) {
+        if (!strcmp(keyval[0], "DriverVer")) {
             stripquotes(keyval[1]);
             def_version(keyval[0], keyval[1]);
         }
-        if (strcmp(keyval[0], "ClassGUID") == 0) {
+        if (!strcmp(keyval[0], "ClassGUID")) {
             regex(keyval[1], "[^{]+[^}]", ps);
             strcpy(classguid, ps[0]);
             lc(classguid);
@@ -533,7 +533,7 @@ int parseMfr(void) {
 
         strcpy(ver, "Provider");
         getVersion(ver);
-        if (strcmp(keyval[0], ver) == 0)
+        if (!strcmp(keyval[0], ver))
             def_strings(keyval[0], keyval[1]);
 
         if (keyval[1][0] != '\0') {
@@ -682,7 +682,7 @@ int parseDevice(const char *flavour, const char *device_sect,
        first strip flavour from device_sect and then look for matching
        section
     */
-    if (strcmp(device_sect, "RNDIS.NT.5.1") == 0)
+    if (!strcmp(device_sect, "RNDIS.NT.5.1"))
         dev = getSection("RNDIS.NT");
     if (!dev) {
         snprintf(sec, sizeof(sec), "%s.%s", device_sect, flavour);
@@ -831,7 +831,7 @@ char *getString(char *s) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(strings[i].key, s) == 0) {
+        if (!strcmp(strings[i].key, s)) {
             strcpy(s, strings[i].val);
             break;
         }
@@ -844,7 +844,7 @@ char *getVersion(char *s) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(version[i].key, s) == 0) {
+        if (!strcmp(version[i].key, s)) {
             strcpy(s, version[i].val);
             break;
         }
@@ -857,7 +857,7 @@ char *getFuzzlist(char *s) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(fuzzlist[i].key, s) == 0) {
+        if (!strcmp(fuzzlist[i].key, s)) {
             strcpy(s, fuzzlist[i].val);
             break;
         }
@@ -870,7 +870,7 @@ char *getBuslist(char *s) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(buslist[i].key, s) == 0) {
+        if (!strcmp(buslist[i].key, s)) {
             strcpy(s, buslist[i].val);
             break;
         }
@@ -883,7 +883,7 @@ char *getFixlist(char *s) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(param_fixlist[i].n, s) == 0) {
+        if (!strcmp(param_fixlist[i].n, s)) {
             strcpy(s, param_fixlist[i].m);
             break;
         }
@@ -896,7 +896,7 @@ void def_strings(const char *key, const char *val) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(strings[i].key, key) == 0) {
+        if (!strcmp(strings[i].key, key)) {
             strcpy(strings[i].val, val);
             break;
         }
@@ -914,7 +914,7 @@ void def_version(const char *key, const char *val) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(version[i].key, key) == 0) {
+        if (!strcmp(version[i].key, key)) {
             strcpy(version[i].val, val);
             break;
         }
@@ -932,7 +932,7 @@ void def_fuzzlist(const char *key, const char *val) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(fuzzlist[i].key, key) == 0) {
+        if (!strcmp(fuzzlist[i].key, key)) {
             strcpy(fuzzlist[i].val, val);
             break;
         }
@@ -950,7 +950,7 @@ void def_buslist(const char *key, const char *val) {
     unsigned int i = 0;
 
     do {
-        if (strcmp(buslist[i].key, key) == 0) {
+        if (!strcmp(buslist[i].key, key)) {
             strcpy(buslist[i].val, val);
             break;
         }
@@ -1050,7 +1050,7 @@ void copy_file(char *file) {
     for (k = 0; k < nb_blacklist; k++) {
         strcpy(lfile, file);
         lc(lfile);
-        if (strcmp(copy_blacklist[k], lfile) == 0)
+        if (!strcmp(copy_blacklist[k], lfile))
             nocopy = 1;
     }
     */
