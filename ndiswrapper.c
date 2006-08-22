@@ -260,7 +260,7 @@ int initStrings(void) {
         return -1;
 
     // Split
-    lines = (char **)malloc(512*sizeof(char*));
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(s->data, '\n');
     lines[i] = strdup(strtok(s->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
@@ -346,7 +346,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     }
 
     // Split
-    lines = (char **)malloc(512*sizeof(char*));
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(reg->data, '\n');
     lines[i] = strdup(strtok(reg->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
@@ -464,7 +464,7 @@ int parseVersion(void) {
         return -1;
 
     // Split
-    lines = (char **)malloc(512*sizeof(char*));
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(s->data, '\n');
     lines[i] = strdup(strtok(s->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
@@ -504,7 +504,7 @@ int parseMfr(void) {
     int i = 0, j, k, l, res = 0;
     char keyval[2][STRBUFFER];
     char **lines;
-    char flavours[512][STRBUFFER];
+    char flavours[LINEBUFFER][STRBUFFER];
     char sp[2][STRBUFFER];
     char ver[STRBUFFER];
     char section[STRBUFFER] = "";
@@ -518,7 +518,7 @@ int parseMfr(void) {
         return -1;
 
     // Split
-    lines = (char **)malloc(512*sizeof(char*));
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(manu->data, '\n');
     lines[i] = strdup(strtok(manu->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
@@ -595,7 +595,7 @@ int parseVendor(const char *flavour, const char *vendor_name) {
         return -1;
 
     // Split
-    lines = (char **)malloc(512*sizeof(char*));
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(vend->data, '\n');
     lines[i] = strdup(strtok(vend->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
@@ -666,7 +666,7 @@ int parseDevice(const char *flavour, const char *device_sect,
                 const char *subvendor, const char *subdevice) {
     int i = 0, j, k, push = 0, par_k = 0;
     char **lines;
-    char copy_files[512][STRBUFFER];
+    char copy_files[LINEBUFFER][STRBUFFER];
     char param_tab[STRBUFFER][STRBUFFER];
     char keyval[2][STRBUFFER];
     char sec[STRBUFFER], addreg[STRBUFFER];
@@ -704,7 +704,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     }
 
     // Split
-    lines = (char **)malloc(512*sizeof(char*));
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(dev->data, '\n');
     lines[i] = strdup(strtok(dev->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
@@ -981,7 +981,7 @@ int copyfiles(const char *copy_name) {
     int i = 0, j, k, l;
     char sp[2][STRBUFFER];
     char **lines;
-    char files[512][STRBUFFER];
+    char files[LINEBUFFER][STRBUFFER];
     struct delim_s *delimlist;
     char *tmp;
     struct DEF_SECTION *copy = NULL;
@@ -999,7 +999,7 @@ int copyfiles(const char *copy_name) {
     }
 
     // Split
-    lines = (char **)malloc(512*sizeof(char*));
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(copy->data, '\n');
     lines[i] = strdup(strtok(copy->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
@@ -1110,7 +1110,7 @@ int finddir(char *file) {
     }
 
     // Split
-    lines = (char **)malloc(512*sizeof(char*));
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(sourcedisksfiles->data, '\n');
     lines[i] = strdup(strtok(sourcedisksfiles->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
