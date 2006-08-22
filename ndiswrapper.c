@@ -500,7 +500,7 @@ int parseMfr(void) {
     int i = 0, j, k, l, res = 0;
     char keyval[2][STRBUFFER];
     char **lines;
-    char flavours[LINEBUFFER][STRBUFFER];
+    char **flavours;
     char sp[2][STRBUFFER];
     char ver[STRBUFFER];
     char section[STRBUFFER] = "";
@@ -536,17 +536,19 @@ int parseMfr(void) {
             flavour[0] = '\0';
             // Split
             k = 0;
+            flavours = (char **)malloc(LINEBUFFER*sizeof(char*));
             delimlist = storedelim(keyval[1], ',');
-            strcpy(flavours[k], strtok(keyval[1], ","));
+            flavours[k] = strdup(strtok(keyval[1], ","));
             while ((tmp = strtok(NULL, ",")) != NULL) {
                 stripquotes(trim(tmp));
-                strcpy(flavours[++k], tmp);
+                flavours[++k] = strdup(tmp);
             }
             restoredelim(delimlist, keyval[1], ',');
 
             if (k == 0) {
                 // Vendor
                 strcpy(section, flavours[0]);
+                free(flavours[0]);
             }
             else {
                 l = k + 1;
@@ -564,10 +566,12 @@ int parseMfr(void) {
                             strcpy(flavour, sp[1]);
                         }
                     }
+                    free(flavours[k]);
                 }
             }
             if (!res)
                 res = parseVendor(flavour, section);
+            free(flavours);
         }
     }
     free(lines);
@@ -658,7 +662,7 @@ int parseDevice(const char *flavour, const char *device_sect,
                 const char *subvendor, const char *subdevice) {
     int i = 0, j, k, push = 0, par_k = 0;
     char **lines;
-    char copy_files[LINEBUFFER][STRBUFFER];
+    char **copy_files;
     char param_tab[STRBUFFER][STRBUFFER];
     char keyval[2][STRBUFFER];
     char sec[STRBUFFER], addreg[STRBUFFER];
@@ -696,6 +700,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     }
 
     // Split
+    copy_files = (char **)malloc(LINEBUFFER*sizeof(char*));
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(dev->data, '\n');
     lines[i] = strdup(strtok(dev->data, "\n"));
@@ -712,7 +717,7 @@ int parseDevice(const char *flavour, const char *device_sect,
             if (!strcasecmp(keyval[0], "addreg"))
                 strcpy(addreg, keyval[1]);
             else if (!strcasecmp(keyval[0], "copyfiles")) {
-                strcpy(copy_files[push], keyval[1]);
+                copy_files[push] = strdup(keyval[1]);
                 push++;
             }
             else if (!strcasecmp(keyval[0], "BusType"))
@@ -782,6 +787,7 @@ int parseDevice(const char *flavour, const char *device_sect,
         lines[i] = strdup(strtok(copy_files[k], ","));
         while ((tmp = strtok(NULL, ",")) != NULL)
             lines[++i] = strdup(tmp);
+        free(copy_files[k]);
 
         j = i + 1;
         for (i = 0; i < j; i++) {
@@ -791,6 +797,7 @@ int parseDevice(const char *flavour, const char *device_sect,
         }
     }
     fclose(f);
+    free(copy_files);
     free(lines);
     return 1;
 }
@@ -973,7 +980,7 @@ int copyfiles(const char *copy_name) {
     int i = 0, j, k, l;
     char sp[2][STRBUFFER];
     char **lines;
-    char files[LINEBUFFER][STRBUFFER];
+    char **files;
     struct delim_s *delimlist;
     char *tmp;
     struct DEF_SECTION *copy = NULL;
@@ -991,6 +998,7 @@ int copyfiles(const char *copy_name) {
     }
 
     // Split
+    files = (char **)malloc(LINEBUFFER*sizeof(char*));
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     delimlist = storedelim(copy->data, '\n');
     lines[i] = strdup(strtok(copy->data, "\n"));
@@ -1007,9 +1015,9 @@ int copyfiles(const char *copy_name) {
         // Split
         k = 0;
         delimlist = storedelim(copy->data, ',');
-        strcpy(files[k], strtok(copy->data, ","));
+        files[k] = strdup(strtok(copy->data, ","));
         while ((tmp = strtok(NULL, ",")) != NULL)
-            strcpy(files[++k], tmp);
+            files[++k] = strdup(tmp);
         restoredelim(delimlist, copy->data, ',');
 
         l = k + 1;
@@ -1017,10 +1025,12 @@ int copyfiles(const char *copy_name) {
             trim(files[k]);
             if (strlen(files[k]) > 0)
                 copy_file(files[k]);
+            free(files[k]);
         }
     }
     for (i=0; i < j; i++)
         free(lines[i]);
+    free(files);
     free(lines);
     return 0;
 }
