@@ -247,7 +247,7 @@ int loadinf(const char *filename) {
 int initStrings(void) {
     int i = 0;
     int j;
-    char lines[512][STRBUFFER];
+    char **lines;
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
     struct delim_s *delimlist;
@@ -259,21 +259,24 @@ int initStrings(void) {
         return -1;
 
     // Split
+    lines = (char **)malloc(512*sizeof(char*));
     delimlist = storedelim(s->data, '\n');
-    strcpy(lines[i], strtok(s->data, "\n"));
+    lines[i] = strdup(strtok(s->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
     restoredelim(delimlist, s->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
         remComment(lines[i]);
         getKeyVal(lines[i], keyval);
+        free(lines[i]);
         if (keyval[1][0] != '\0') {
             regex(keyval[1], "[^\"]+", ps);
             def_strings(keyval[0], ps[0]);
         }
     }
+    free(lines);
     return 1;
 }
 
@@ -321,7 +324,7 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
 int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     int i = 0, j;
     int found = 0, gotParam = 0;
-    char lines[512][STRBUFFER];
+    char **lines;
     char ps[6][STRBUFFER];
     char param[STRBUFFER], param_t[STRBUFFER];
     char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
@@ -342,10 +345,11 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
     }
 
     // Split
+    lines = (char **)malloc(512*sizeof(char*));
     delimlist = storedelim(reg->data, '\n');
-    strcpy(lines[i], strtok(reg->data, "\n"));
+    lines[i] = strdup(strtok(reg->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
     restoredelim(delimlist, reg->data, '\n');
 
     j = i + 1;
@@ -353,6 +357,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
         trim(remComment(lines[i]));
         if (strcmp(lines[i], "") != 0) {
             regex(lines[i], ps1, ps);
+            free(lines[i]);
             strcpy(p1, ps[2]);
             strcpy(p2, ps[3]);
             strcpy(p3, ps[4]);
@@ -407,6 +412,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
             }
         }
     }
+    free(lines);
     return 1;
 }
 
@@ -445,7 +451,7 @@ int remove(const char *name) {
 
 int parseVersion(void) {
     int i = 0, j;
-    char lines[512][STRBUFFER];
+    char **lines;
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
     struct delim_s *delimlist;
@@ -457,16 +463,18 @@ int parseVersion(void) {
         return -1;
 
     // Split
+    lines = (char **)malloc(512*sizeof(char*));
     delimlist = storedelim(s->data, '\n');
-    strcpy(lines[i], strtok(s->data, "\n"));
+    lines[i] = strdup(strtok(s->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
     restoredelim(delimlist, s->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
         remComment(lines[i]);
         getKeyVal(lines[i], keyval);
+        free(lines[i]);
         if (strcmp(keyval[0], "Provider") == 0) {
             stripquotes(keyval[1]);
             def_version(keyval[0], keyval[1]);
@@ -481,6 +489,7 @@ int parseVersion(void) {
             lc(classguid);
         }
     }
+    free(lines);
     parseMfr();
     return 1;
 }
@@ -491,9 +500,9 @@ int parseMfr(void) {
        Vendor,ME,NT,NT.5.1
        Vendor.NTx86
     */
-    int i = 0, j, k, l, res;
+    int i = 0, j, k, l, res = 0;
     char keyval[2][STRBUFFER];
-    char lines[512][STRBUFFER];
+    char **lines;
     char flavours[512][STRBUFFER];
     char sp[2][STRBUFFER];
     char ver[STRBUFFER];
@@ -508,16 +517,18 @@ int parseMfr(void) {
         return -1;
 
     // Split
+    lines = (char **)malloc(512*sizeof(char*));
     delimlist = storedelim(manu->data, '\n');
-    strcpy(lines[i], strtok(manu->data, "\n"));
+    lines[i] = strdup(strtok(manu->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
     restoredelim(delimlist, manu->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
         remComment(lines[i]);
         getKeyVal(lines[i], keyval);
+        free(lines[i]);
 
         strcpy(ver, "Provider");
         getVersion(ver);
@@ -558,18 +569,18 @@ int parseMfr(void) {
                     }
                 }
             }
-            res = parseVendor(flavour, section);
-            if (res)
-                return res;
+            if (!res)
+                res = parseVendor(flavour, section);
         }
     }
-    return 0;
+    free(lines);
+    return res;
 }
 
 int parseVendor(const char *flavour, const char *vendor_name) {
     int i = 0, j;
     int bt;
-    char lines[512][STRBUFFER];
+    char **lines;
     char keyval[2][STRBUFFER];
     char section[STRBUFFER], id[STRBUFFER];
     char vendor[STRBUFFER], device[STRBUFFER];
@@ -583,16 +594,18 @@ int parseVendor(const char *flavour, const char *vendor_name) {
         return -1;
 
     // Split
+    lines = (char **)malloc(512*sizeof(char*));
     delimlist = storedelim(vend->data, '\n');
-    strcpy(lines[i], strtok(vend->data, "\n"));
+    lines[i] = strdup(strtok(vend->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
     restoredelim(delimlist, vend->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
         remComment(lines[i]);
         getKeyVal(lines[i], keyval);
+        free(lines[i]);
         if (keyval[1][0] != '\0') {
             strcpy(section, strtok(keyval[1], ","));
             strcpy(id, strtok(NULL, ","));
@@ -604,6 +617,7 @@ int parseVendor(const char *flavour, const char *vendor_name) {
                 parseDevice(flavour, section, vendor, device, subvendor, subdevice);
         }
     }
+    free(lines);
     return 0;
 }
 
@@ -650,7 +664,7 @@ int parseDevice(const char *flavour, const char *device_sect,
                 const char *device, const char *vendor,
                 const char *subvendor, const char *subdevice) {
     int i = 0, j, k, push = 0, par_k = 0;
-    char lines[512][STRBUFFER];
+    char **lines;
     char copy_files[512][STRBUFFER];
     char param_tab[STRBUFFER][STRBUFFER];
     char keyval[2][STRBUFFER];
@@ -689,16 +703,18 @@ int parseDevice(const char *flavour, const char *device_sect,
     }
 
     // Split
+    lines = (char **)malloc(512*sizeof(char*));
     delimlist = storedelim(dev->data, '\n');
-    strcpy(lines[i], strtok(dev->data, "\n"));
+    lines[i] = strdup(strtok(dev->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
     restoredelim(delimlist, dev->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
         trim(remComment(lines[i]));
         getKeyVal(lines[i], keyval);
+        free(lines[i]);
         if (keyval[0][0] != '\0') {
             if (!strcasecmp(keyval[0], "addreg"))
                 strcpy(addreg, keyval[1]);
@@ -752,14 +768,15 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     // Split
     i = 0;
-    strcpy(lines[i], strtok(addreg, ","));
+    lines[i] = strdup(strtok(addreg, ","));
     while ((tmp = strtok(NULL, ",")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
         trim(lines[i]);
         addReg(lines[i], param_tab, &par_k);
+        free(lines[i]);
     }
     /* sort and unify before writing */
     unisort(param_tab, &par_k);
@@ -769,17 +786,19 @@ int parseDevice(const char *flavour, const char *device_sect,
     for (k = 0; k < push; k++) {
         // Split
         i = 0;
-        strcpy(lines[i], strtok(copy_files[k], ","));
+        lines[i] = strdup(strtok(copy_files[k], ","));
         while ((tmp = strtok(NULL, ",")) != NULL)
-            strcpy(lines[++i], tmp);
+            lines[++i] = strdup(tmp);
 
         j = i + 1;
         for (i = 0; i < j; i++) {
             trim(lines[i]);
             copyfiles(lines[i]);
+            free(lines[i]);
         }
     }
     fclose(f);
+    free(lines);
     return 1;
 }
 
@@ -960,7 +979,7 @@ void def_buslist(const char *key, const char *val) {
 int copyfiles(const char *copy_name) {
     int i = 0, j, k, l;
     char sp[2][STRBUFFER];
-    char lines[512][STRBUFFER];
+    char **lines;
     char files[512][STRBUFFER];
     struct delim_s *delimlist;
     char *tmp;
@@ -979,10 +998,11 @@ int copyfiles(const char *copy_name) {
     }
 
     // Split
+    lines = (char **)malloc(512*sizeof(char*));
     delimlist = storedelim(copy->data, '\n');
-    strcpy(lines[i], strtok(copy->data, "\n"));
+    lines[i] = strdup(strtok(copy->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
     restoredelim(delimlist, copy->data, '\n');
 
     j = i + 1;
@@ -1006,6 +1026,9 @@ int copyfiles(const char *copy_name) {
                 copy_file(files[k]);
         }
     }
+    for (i=0; i < j; i++)
+        free(lines[i]);
+    free(lines);
     return 0;
 }
 
@@ -1072,9 +1095,9 @@ int copy(const char *file_src, const char *file_dst, int mod) {
 }
 
 int finddir(char *file) {
-    int i = 0, j;
+    int i = 0, j, res = -1;
     char sp[3][STRBUFFER];
-    char lines[512][STRBUFFER];
+    char **lines;
     struct delim_s *delimlist;
     char *tmp;
     struct DEF_SECTION *sourcedisksfiles = NULL;
@@ -1086,25 +1109,28 @@ int finddir(char *file) {
     }
 
     // Split
+    lines = (char **)malloc(512*sizeof(char*));
     delimlist = storedelim(sourcedisksfiles->data, '\n');
-    strcpy(lines[i], strtok(sourcedisksfiles->data, "\n"));
+    lines[i] = strdup(strtok(sourcedisksfiles->data, "\n"));
     while ((tmp = strtok(NULL, "\n")) != NULL)
-        strcpy(lines[++i], tmp);
+        lines[++i] = strdup(tmp);
     restoredelim(delimlist, sourcedisksfiles->data, '\n');
 
     j = i + 1;
     for (i = 0; i < j; i++) {
         trim(remComment(lines[i]));
         regex(lines[i], "(.+)=.+,+(.*)", sp);
+        free(lines[i]);
         trim(sp[1]);
         trim(sp[2]);
-        if (sp[1][0] != '\0' && sp[2][0] != '\0' && !strcasecmp(sp[1], file)) {
+        if (res == -1 && sp[1][0] != '\0' && sp[2][0] != '\0' && !strcasecmp(sp[1], file)) {
             strcpy(file, sp[2]);
-            return 1;
+            res = 1;
         }
     }
-    file[0] = '\0';
-    return -1;
+    if (res == -1)
+        file[0] = '\0';
+    return res;
 }
 
 int findfile(const char *dir, char *file) {
@@ -1247,7 +1273,7 @@ int regex(const char *str_request, const char *str_regex,
         icase = va_arg(pp, int);
     va_end(pp);
 
-    int err, match, start, end;
+    int err, match, start, end, res = 0;
     unsigned int i;
     char *text = NULL;
     size_t nmatch = 0;
@@ -1275,14 +1301,14 @@ int regex(const char *str_request, const char *str_regex,
                         free(text);
                     }
                 }
-                free(pmatch);
-                return 1;
+                res = 1;
             }
             free(pmatch);
         }
     }
-    rmatch[0][0] = '\0';
-    return 0;
+    if (!res)
+        rmatch[0][0] = '\0';
+    return res;
 }
 
 struct DEF_SECTION *getSection(const char *needle) {
