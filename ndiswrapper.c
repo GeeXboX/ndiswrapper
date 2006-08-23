@@ -210,7 +210,7 @@ int isInstalled(const char *name) {
 }
 
 int loadinf(const char *filename) {
-    char s[STRBUFFER], val[STRBUFFER];
+    char s[STRBUFFER];
     char *lbracket, *rbracket;
     FILE *f;
     int res = 0;
@@ -235,9 +235,8 @@ int loadinf(const char *filename) {
         if (lbracket && rbracket) {
             nb_sections++;
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
-            strncpy(val, lbracket+1, rbracket-lbracket-1);
-            val[rbracket-lbracket-1] = '\0';
-            strcpy(sections[nb_sections-1]->name, val);
+            strncpy(sections[nb_sections-1]->name, lbracket+1, rbracket-lbracket-1);
+            sections[nb_sections-1]->name[rbracket-lbracket-1] = '\0';
         }
         else {
             if (strlen(sections[nb_sections-1]->data) + strlen(s) < DATABUFFER)
