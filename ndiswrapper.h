@@ -64,11 +64,6 @@ struct DEF_FIXLIST {
     char m[16];
 };
 
-struct delim_s {
-    unsigned int loc;
-    struct delim_s *next;
-};
-
 /* inf installation */
 int install(const char *inf);
 int isInstalled(const char *name);
@@ -127,8 +122,6 @@ int regex(const char *str_request, const char *str_regex,
           char rmatch[][STRBUFFER], ...);
 struct DEF_SECTION *getSection(const char *needle);
 void unisort(char tab[][STRBUFFER], int *last);
-struct delim_s *storedelim(const char *input, const char delim);
-void restoredelim(struct delim_s *delimlist, char *input, const char delim);
 void usage(void);
 
 #endif /* _NDISWRAPPER_H_ */
