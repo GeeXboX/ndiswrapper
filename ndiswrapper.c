@@ -1011,22 +1011,20 @@ int copyfiles(const char *copy_name) {
         if (lines[i][0] == '[')
             break;
 
-        if (strlen(lines[i]) > 0) {
-            // Split
-            k = 0;
-            files[k] = strdup(strtok(lines[i], ","));
-            while ((tmp = strtok(NULL, ",")) != NULL) {
-                files[++k] = strdup(tmp);
-                *(tmp - 1) = ',';
-            }
+        // Split
+        k = 0;
+        files[k] = strdup(strtok(lines[i], ","));
+        while ((tmp = strtok(NULL, ",")) != NULL) {
+            files[++k] = strdup(tmp);
+            *(tmp - 1) = ',';
+        }
 
-            l = k + 1;
-            for (k = 0; k < l; k++) {
-                trim(files[k]);
-                if (strlen(files[k]) > 0)
-                    copy_file(files[k]);
-                free(files[k]);
-            }
+        l = k + 1;
+        for (k = 0; k < l; k++) {
+            trim(files[k]);
+            if (strlen(files[k]) > 0)
+                copy_file(files[k]);
+            free(files[k]);
         }
     }
     for (i=0; i < j; i++)
