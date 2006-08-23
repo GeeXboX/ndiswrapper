@@ -1200,7 +1200,6 @@ char *uc(char *data) {
 
     for (i = 0; data[i] != '\0'; i++)
         data[i] = toupper(data[i]);
-    data[i] = '\0';
     return data;
 }
 
@@ -1209,7 +1208,6 @@ char *lc(char *data) {
 
     for (i = 0; data[i] != '\0'; i++)
         data[i] = tolower(data[i]);
-    data[i] = '\0';
     return data;
 }
 
