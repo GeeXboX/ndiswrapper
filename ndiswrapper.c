@@ -267,11 +267,15 @@ int initStrings(void) {
 
     // Split
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines[i] = strdup(strtok(s->data, "\n"));
-    while ((tmp = strtok(NULL, "\n")) != NULL) {
-        lines[++i] = strdup(tmp);
-        *(tmp - 1) = '\n';
+    if ((tmp = strtok(s->data, "\n")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, "\n")) != NULL) {
+            lines[++i] = strdup(tmp);
+            *(tmp - 1) = '\n';
+        }
     }
+    else
+        lines[i] = strdup(s->data);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -348,11 +352,15 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
 
     // Split
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines[i] = strdup(strtok(reg->data, "\n"));
-    while ((tmp = strtok(NULL, "\n")) != NULL) {
-        lines[++i] = strdup(tmp);
-        *(tmp - 1) = '\n';
+    if ((tmp = strtok(reg->data, "\n")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, "\n")) != NULL) {
+            lines[++i] = strdup(tmp);
+            *(tmp - 1) = '\n';
+        }
     }
+    else
+        lines[i] = strdup(reg->data);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -465,11 +473,15 @@ int parseVersion(void) {
 
     // Split
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines[i] = strdup(strtok(s->data, "\n"));
-    while ((tmp = strtok(NULL, "\n")) != NULL) {
-        lines[++i] = strdup(tmp);
-        *(tmp - 1) = '\n';
+    if ((tmp = strtok(s->data, "\n")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, "\n")) != NULL) {
+            lines[++i] = strdup(tmp);
+            *(tmp - 1) = '\n';
+        }
     }
+    else
+        lines[i] = strdup(s->data);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -518,11 +530,15 @@ int parseMfr(void) {
 
     // Split
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines[i] = strdup(strtok(manu->data, "\n"));
-    while ((tmp = strtok(NULL, "\n")) != NULL) {
-        lines[++i] = strdup(tmp);
-        *(tmp - 1) = '\n';
+    if ((tmp = strtok(manu->data, "\n")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, "\n")) != NULL) {
+            lines[++i] = strdup(tmp);
+            *(tmp - 1) = '\n';
+        }
     }
+    else
+        lines[i] = strdup(manu->data);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -540,10 +556,17 @@ int parseMfr(void) {
             // Split
             k = 0;
             flavours = (char **)malloc(LINEBUFFER*sizeof(char*));
-            flavours[k] = strdup(strtok(keyval[1], ","));
-            while ((tmp = strtok(NULL, ",")) != NULL) {
-                flavours[++k] = strdup(tmp);
-                *(tmp - 1) = ',';
+            if ((tmp = strtok(keyval[1], ",")) != NULL) {
+                flavours[k] = strdup(tmp);
+                stripquotes(trim(flavours[k]));
+                while ((tmp = strtok(NULL, ",")) != NULL) {
+                    flavours[++k] = strdup(tmp);
+                    *(tmp - 1) = ',';
+                    stripquotes(trim(flavours[k]));
+                }
+            }
+            else {
+                flavours[k] = strdup(keyval[1]);
                 stripquotes(trim(flavours[k]));
             }
 
@@ -597,11 +620,15 @@ int parseVendor(const char *flavour, const char *vendor_name) {
 
     // Split
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines[i] = strdup(strtok(vend->data, "\n"));
-    while ((tmp = strtok(NULL, "\n")) != NULL) {
-        lines[++i] = strdup(tmp);
-        *(tmp - 1) = '\n';
+    if ((tmp = strtok(vend->data, "\n")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, "\n")) != NULL) {
+            lines[++i] = strdup(tmp);
+            *(tmp - 1) = '\n';
+        }
     }
+    else
+        lines[i] = strdup(vend->data);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -702,11 +729,15 @@ int parseDevice(const char *flavour, const char *device_sect,
     // Split
     copy_files = (char **)malloc(LINEBUFFER*sizeof(char*));
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines[i] = strdup(strtok(dev->data, "\n"));
-    while ((tmp = strtok(NULL, "\n")) != NULL) {
-        lines[++i] = strdup(tmp);
-        *(tmp - 1) = '\n';
+    if ((tmp = strtok(dev->data, "\n")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, "\n")) != NULL) {
+            lines[++i] = strdup(tmp);
+            *(tmp - 1) = '\n';
+        }
     }
+    else
+        lines[i] = strdup(dev->data);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -766,9 +797,13 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     // Split
     i = 0;
-    lines[i] = strdup(strtok(addreg, ","));
-    while ((tmp = strtok(NULL, ",")) != NULL)
-        lines[++i] = strdup(tmp);
+    if ((tmp = strtok(addreg, ",")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, ",")) != NULL)
+            lines[++i] = strdup(tmp);
+    }
+    else
+        lines[i] = strdup(addreg);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -784,9 +819,13 @@ int parseDevice(const char *flavour, const char *device_sect,
     for (k = 0; k < push; k++) {
         // Split
         i = 0;
-        lines[i] = strdup(strtok(copy_files[k], ","));
-        while ((tmp = strtok(NULL, ",")) != NULL)
-            lines[++i] = strdup(tmp);
+        if ((tmp = strtok(copy_files[k], ",")) != NULL) {
+            lines[i] = strdup(tmp);
+            while ((tmp = strtok(NULL, ",")) != NULL)
+                lines[++i] = strdup(tmp);
+        }
+        else
+            lines[i] = strdup(copy_files[k]);
         free(copy_files[k]);
 
         j = i + 1;
@@ -999,11 +1038,15 @@ int copyfiles(const char *copy_name) {
     // Split
     files = (char **)malloc(LINEBUFFER*sizeof(char*));
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines[i] = strdup(strtok(copy->data, "\n"));
-    while ((tmp = strtok(NULL, "\n")) != NULL) {
-        lines[++i] = strdup(tmp);
-        *(tmp - 1) = '\n';
+    if ((tmp = strtok(copy->data, "\n")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, "\n")) != NULL) {
+            lines[++i] = strdup(tmp);
+            *(tmp - 1) = '\n';
+        }
     }
+    else
+        lines[i] = strdup(copy->data);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
@@ -1013,11 +1056,15 @@ int copyfiles(const char *copy_name) {
 
         // Split
         k = 0;
-        files[k] = strdup(strtok(lines[i], ","));
-        while ((tmp = strtok(NULL, ",")) != NULL) {
-            files[++k] = strdup(tmp);
-            *(tmp - 1) = ',';
+        if ((tmp = strtok(lines[i], ",")) != NULL) {
+            files[k] = strdup(tmp);
+            while ((tmp = strtok(NULL, ",")) != NULL) {
+                files[++k] = strdup(tmp);
+                *(tmp - 1) = ',';
+            }
         }
+        else
+            files[k] = strdup(lines[i]);
 
         l = k + 1;
         for (k = 0; k < l; k++) {
@@ -1111,11 +1158,15 @@ int finddir(char *file) {
 
     // Split
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines[i] = strdup(strtok(sourcedisksfiles->data, "\n"));
-    while ((tmp = strtok(NULL, "\n")) != NULL) {
-        lines[++i] = strdup(tmp);
-        *(tmp - 1) = '\n';
+    if ((tmp = strtok(sourcedisksfiles->data, "\n")) != NULL) {
+        lines[i] = strdup(tmp);
+        while ((tmp = strtok(NULL, "\n")) != NULL) {
+            lines[++i] = strdup(tmp);
+            *(tmp - 1) = '\n';
+        }
     }
+    else
+        lines[i] = strdup(sourcedisksfiles->data);
 
     j = i + 1;
     for (i = 0; i < j; i++) {
