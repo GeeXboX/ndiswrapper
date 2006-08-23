@@ -1013,7 +1013,7 @@ int copyfiles(const char *copy_name) {
 
         // Split
         k = 0;
-        files[k] = strdup(strtok(copy->data, ","));
+        files[k] = strdup(strtok(lines[i], ","));
         while ((tmp = strtok(NULL, ",")) != NULL) {
             files[++k] = strdup(tmp);
             *(tmp - 1) = ',';
