@@ -126,7 +126,7 @@ int install(const char *inf) {
     char install_dir[STRBUFFER];
     char dst[STRBUFFER];
     DIR *dir;
-    unsigned int i;
+    unsigned int i, j;
     char *slash, *ext;
 
     if (!file_exists(inf)) {
@@ -175,11 +175,14 @@ int install(const char *inf) {
         }
         processPCIFuzz();
     }
-
     if(sections) {
-        for (i=0; i<nb_sections; i++)
-            if(sections[i])
+        for (i = 0; i < nb_sections; i++)
+            if(sections[i]) {
+                for (j = 0; j < sections[i]->datalen; j++)
+                    free(sections[i]->data[j]);
+                free(sections[i]->data);
                 free(sections[i]);
+            }
         free(sections);
     }
     return 0;
@@ -229,6 +232,8 @@ int loadinf(const char *filename) {
             nb_sections++;
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
             strcpy(sections[nb_sections-1]->name,"none");
+            sections[nb_sections-1]->data = (char**)malloc(DATABUFFER*sizeof(char*));
+            sections[nb_sections-1]->datalen = 0;
         }
         lbracket = strchr(s,'[');
         rbracket = strchr(s,']');
@@ -237,15 +242,13 @@ int loadinf(const char *filename) {
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
             strncpy(sections[nb_sections-1]->name, lbracket+1, rbracket-lbracket-1);
             sections[nb_sections-1]->name[rbracket-lbracket-1] = '\0';
+            sections[nb_sections-1]->data = (char**)malloc(DATABUFFER*sizeof(char*));
+            sections[nb_sections-1]->datalen = 0;
         }
         else {
-            if (strlen(sections[nb_sections-1]->data) + strlen(s) < DATABUFFER)
-                strcat(sections[nb_sections-1]->data, s);
-            else {
-                printf("Error: memory allocation insufficient for section %s\nAborting read of suspicious file: %s\n", sections[nb_sections-1]->name, filename);
-                res = 0;
-                break;
-            }
+            trim(remComment(s));
+            if (strlen(s) > 0)
+                sections[nb_sections-1]->data[sections[nb_sections-1]->datalen++] = strdup(s);
         }
     }
     fclose(f);
@@ -253,41 +256,22 @@ int loadinf(const char *filename) {
 }
 
 int initStrings(void) {
-    int i = 0;
-    int j;
-    char **lines;
+    unsigned int i = 0;
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
-    char *tmp;
     struct DEF_SECTION *s = NULL;
 
     s = getSection("strings");
     if (s == NULL)
         return -1;
 
-    // Split
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    if ((tmp = strtok(s->data, "\n")) != NULL) {
-        lines[i] = strdup(tmp);
-        while ((tmp = strtok(NULL, "\n")) != NULL) {
-            lines[++i] = strdup(tmp);
-            *(tmp - 1) = '\n';
-        }
-    }
-    else
-        lines[i] = strdup(s->data);
-
-    j = i + 1;
-    for (i = 0; i < j; i++) {
-        remComment(lines[i]);
-        getKeyVal(lines[i], keyval);
-        free(lines[i]);
+    for (i = 0; i < s->datalen; i++) {
+        getKeyVal(s->data[i], keyval);
         if (keyval[1][0] != '\0') {
             regex(keyval[1], "[^\"]+", ps);
             def_strings(keyval[0], ps[0]);
         }
     }
-    free(lines);
     return 1;
 }
 
@@ -332,16 +316,14 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
     }
 }
 
-int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
-    int i = 0, j;
+int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
+    unsigned int i = 0;
     int found = 0, gotParam = 0;
-    char **lines;
     char ps[6][STRBUFFER];
     char param[STRBUFFER], param_t[STRBUFFER];
     char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
     char p1[STRBUFFER], p2[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
     char fixlist[STRBUFFER], sOld[STRBUFFER];
-    char *tmp;
     struct DEF_SECTION *reg = NULL;
 
     reg = getSection(reg_name);
@@ -350,24 +332,9 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
         return -1;
     }
 
-    // Split
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    if ((tmp = strtok(reg->data, "\n")) != NULL) {
-        lines[i] = strdup(tmp);
-        while ((tmp = strtok(NULL, "\n")) != NULL) {
-            lines[++i] = strdup(tmp);
-            *(tmp - 1) = '\n';
-        }
-    }
-    else
-        lines[i] = strdup(reg->data);
-
-    j = i + 1;
-    for (i = 0; i < j; i++) {
-        trim(remComment(lines[i]));
-        if (strcmp(lines[i], "") != 0) {
-            regex(lines[i], PS1, ps);
-            free(lines[i]);
+    for (i = 0; i < reg->datalen; i++) {
+        if (strcmp(reg->data[i], "") != 0) {
+            regex(reg->data[i], PS1, ps);
             strcpy(p1, ps[2]);
             strcpy(p2, ps[3]);
             strcpy(p3, ps[4]);
@@ -422,7 +389,6 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k) {
             }
         }
     }
-    free(lines);
     return 1;
 }
 
@@ -460,11 +426,9 @@ int remove(const char *name) {
  */
 
 int parseVersion(void) {
-    int i = 0, j;
-    char **lines;
+    unsigned int i = 0;
     char keyval[2][STRBUFFER];
     char ps[1][STRBUFFER];
-    char *tmp;
     struct DEF_SECTION *s = NULL;
 
     s = getSection("version");
@@ -472,22 +436,8 @@ int parseVersion(void) {
         return -1;
 
     // Split
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    if ((tmp = strtok(s->data, "\n")) != NULL) {
-        lines[i] = strdup(tmp);
-        while ((tmp = strtok(NULL, "\n")) != NULL) {
-            lines[++i] = strdup(tmp);
-            *(tmp - 1) = '\n';
-        }
-    }
-    else
-        lines[i] = strdup(s->data);
-
-    j = i + 1;
-    for (i = 0; i < j; i++) {
-        remComment(lines[i]);
-        getKeyVal(lines[i], keyval);
-        free(lines[i]);
+    for (i = 0; i < s->datalen; i++) {
+        getKeyVal(s->data[i], keyval);
         if (!strcmp(keyval[0], "Provider")) {
             stripquotes(keyval[1]);
             def_version(keyval[0], keyval[1]);
@@ -502,7 +452,6 @@ int parseVersion(void) {
             lc(classguid);
         }
     }
-    free(lines);
     parseMfr();
     return 1;
 }
@@ -513,9 +462,9 @@ int parseMfr(void) {
        Vendor,ME,NT,NT.5.1
        Vendor.NTx86
     */
-    int i = 0, j, k, l, res = 0;
+    unsigned int i = 0, k, l;
+    int res = 0;
     char keyval[2][STRBUFFER];
-    char **lines;
     char **flavours;
     char sp[2][STRBUFFER];
     char ver[STRBUFFER];
@@ -528,23 +477,8 @@ int parseMfr(void) {
     if (!manu)
         return -1;
 
-    // Split
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    if ((tmp = strtok(manu->data, "\n")) != NULL) {
-        lines[i] = strdup(tmp);
-        while ((tmp = strtok(NULL, "\n")) != NULL) {
-            lines[++i] = strdup(tmp);
-            *(tmp - 1) = '\n';
-        }
-    }
-    else
-        lines[i] = strdup(manu->data);
-
-    j = i + 1;
-    for (i = 0; i < j; i++) {
-        remComment(lines[i]);
-        getKeyVal(lines[i], keyval);
-        free(lines[i]);
+    for (i = 0; i < manu->datalen; i++) {
+        getKeyVal(manu->data[i], keyval);
 
         strcpy(ver, "Provider");
         getVersion(ver);
@@ -599,42 +533,24 @@ int parseMfr(void) {
             free(flavours);
         }
     }
-    free(lines);
     return res;
 }
 
 int parseVendor(const char *flavour, const char *vendor_name) {
-    int i = 0, j;
+    unsigned int i = 0;
     int bt;
-    char **lines;
     char keyval[2][STRBUFFER];
     char section[STRBUFFER], id[STRBUFFER];
     char vendor[STRBUFFER], device[STRBUFFER];
     char subvendor[STRBUFFER], subdevice[STRBUFFER];
-    char *tmp;
     struct DEF_SECTION *vend = NULL;
 
     vend = getSection(vendor_name);
     if (vend == NULL)
         return -1;
 
-    // Split
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    if ((tmp = strtok(vend->data, "\n")) != NULL) {
-        lines[i] = strdup(tmp);
-        while ((tmp = strtok(NULL, "\n")) != NULL) {
-            lines[++i] = strdup(tmp);
-            *(tmp - 1) = '\n';
-        }
-    }
-    else
-        lines[i] = strdup(vend->data);
-
-    j = i + 1;
-    for (i = 0; i < j; i++) {
-        remComment(lines[i]);
-        getKeyVal(lines[i], keyval);
-        free(lines[i]);
+    for (i = 0; i < vend->datalen; i++) {
+        getKeyVal(vend->data[i], keyval);
         if (keyval[1][0] != '\0') {
             strcpy(section, strtok(keyval[1], ","));
             strcpy(id, strtok(NULL, ","));
@@ -646,7 +562,6 @@ int parseVendor(const char *flavour, const char *vendor_name) {
                 parseDevice(flavour, section, vendor, device, subvendor, subdevice);
         }
     }
-    free(lines);
     return 0;
 }
 
@@ -688,7 +603,7 @@ int parseID(const char *id, int *bt, char *vendor,
 int parseDevice(const char *flavour, const char *device_sect,
                 const char *device, const char *vendor,
                 const char *subvendor, const char *subdevice) {
-    int i = 0, j, k, push = 0, par_k = 0;
+    unsigned int i = 0, j, k, push = 0, par_k = 0;
     char **lines;
     char **copy_files;
     char param_tab[STRBUFFER][STRBUFFER];
@@ -726,24 +641,10 @@ int parseDevice(const char *flavour, const char *device_sect,
         return -1;
     }
 
-    // Split
     copy_files = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    if ((tmp = strtok(dev->data, "\n")) != NULL) {
-        lines[i] = strdup(tmp);
-        while ((tmp = strtok(NULL, "\n")) != NULL) {
-            lines[++i] = strdup(tmp);
-            *(tmp - 1) = '\n';
-        }
-    }
-    else
-        lines[i] = strdup(dev->data);
-
-    j = i + 1;
-    for (i = 0; i < j; i++) {
-        trim(remComment(lines[i]));
-        getKeyVal(lines[i], keyval);
-        free(lines[i]);
+    
+    for (i = 0; i < dev->datalen; i++) {
+        getKeyVal(dev->data[i], keyval);
         if (keyval[0][0] != '\0') {
             if (!strcasecmp(keyval[0], "addreg"))
                 strcpy(addreg, keyval[1]);
@@ -797,6 +698,7 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     // Split
     i = 0;
+    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
     if ((tmp = strtok(addreg, ",")) != NULL) {
         lines[i] = strdup(tmp);
         while ((tmp = strtok(NULL, ",")) != NULL)
@@ -1016,9 +918,8 @@ void def_buslist(const char *key, const char *val) {
  */
 
 int copyfiles(const char *copy_name) {
-    int i = 0, j, k, l;
+    unsigned int i = 0, k, l;
     char sp[2][STRBUFFER];
-    char **lines;
     char **files;
     char *tmp;
     struct DEF_SECTION *copy = NULL;
@@ -1035,28 +936,14 @@ int copyfiles(const char *copy_name) {
         return -1;
     }
 
-    // Split
     files = (char **)malloc(LINEBUFFER*sizeof(char*));
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    if ((tmp = strtok(copy->data, "\n")) != NULL) {
-        lines[i] = strdup(tmp);
-        while ((tmp = strtok(NULL, "\n")) != NULL) {
-            lines[++i] = strdup(tmp);
-            *(tmp - 1) = '\n';
-        }
-    }
-    else
-        lines[i] = strdup(copy->data);
-
-    j = i + 1;
-    for (i = 0; i < j; i++) {
-        trim(lines[i]);
-        if (lines[i][0] == '[')
+    for (i = 0; i < copy->datalen; i++) {
+        if (copy->data[i][0] == '[')
             break;
 
         // Split
         k = 0;
-        if ((tmp = strtok(lines[i], ",")) != NULL) {
+        if ((tmp = strtok(copy->data[i], ",")) != NULL) {
             files[k] = strdup(tmp);
             while ((tmp = strtok(NULL, ",")) != NULL) {
                 files[++k] = strdup(tmp);
@@ -1064,7 +951,7 @@ int copyfiles(const char *copy_name) {
             }
         }
         else
-            files[k] = strdup(lines[i]);
+            files[k] = strdup(copy->data[i]);
 
         l = k + 1;
         for (k = 0; k < l; k++) {
@@ -1074,10 +961,7 @@ int copyfiles(const char *copy_name) {
             free(files[k]);
         }
     }
-    for (i=0; i < j; i++)
-        free(lines[i]);
     free(files);
-    free(lines);
     return 0;
 }
 
@@ -1144,10 +1028,9 @@ int copy(const char *file_src, const char *file_dst, int mod) {
 }
 
 int finddir(char *file) {
-    int i = 0, j, res = -1;
+    unsigned int i = 0;
+    int res = -1;
     char sp[3][STRBUFFER];
-    char **lines;
-    char *tmp;
     struct DEF_SECTION *sourcedisksfiles = NULL;
 
     sourcedisksfiles = getSection("sourcedisksfiles");
@@ -1156,23 +1039,8 @@ int finddir(char *file) {
         return -1;
     }
 
-    // Split
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
-    if ((tmp = strtok(sourcedisksfiles->data, "\n")) != NULL) {
-        lines[i] = strdup(tmp);
-        while ((tmp = strtok(NULL, "\n")) != NULL) {
-            lines[++i] = strdup(tmp);
-            *(tmp - 1) = '\n';
-        }
-    }
-    else
-        lines[i] = strdup(sourcedisksfiles->data);
-
-    j = i + 1;
-    for (i = 0; i < j; i++) {
-        trim(remComment(lines[i]));
-        regex(lines[i], "(.+)=.+,+(.*)", sp);
-        free(lines[i]);
+    for (i = 0; i < sourcedisksfiles->datalen; i++) {
+        regex(sourcedisksfiles->data[i], "(.+)=.+,+(.*)", sp);
         trim(sp[1]);
         trim(sp[2]);
         if (res == -1 && sp[1][0] != '\0' && sp[2][0] != '\0' && !strcasecmp(sp[1], file)) {
@@ -1368,8 +1236,8 @@ struct DEF_SECTION *getSection(const char *needle) {
     return NULL;
 }
 
-void unisort(char tab[][STRBUFFER], int *last) {
-    int i, j;
+void unisort(char tab[][STRBUFFER], unsigned int *last) {
+    unsigned int i, j;
     int change = 1;
     char tmp[STRBUFFER];
 

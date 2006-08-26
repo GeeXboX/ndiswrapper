@@ -28,7 +28,7 @@
 
 #define LINEBUFFER        512
 #define STRBUFFER         256
-#define DATABUFFER        16384
+#define DATABUFFER        256
 
 #define WRAP_PCI_BUS      5
 #define WRAP_PCMCIA_BUS   8
@@ -51,7 +51,8 @@
 /* Use structure for replace Perl hash */
 struct DEF_SECTION {
     char name[STRBUFFER];
-    char data[DATABUFFER];
+    char **data;
+    unsigned int datalen;
 };
 
 struct DEF_STRVER {
@@ -73,7 +74,7 @@ void processPCIFuzz(void);
 void addPCIFuzzEntry(const char *vendor, const char *device,
                      const char *subvendor, const char *subdevice,
                      const char *bt);
-int addReg(const char *reg_name, char param_tab[][STRBUFFER], int *k);
+int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k);
 
 /* driver tools */
 int remove(const char *name);
@@ -121,7 +122,7 @@ char *substStr(char *s);
 int regex(const char *str_request, const char *str_regex,
           char rmatch[][STRBUFFER], ...);
 struct DEF_SECTION *getSection(const char *needle);
-void unisort(char tab[][STRBUFFER], int *last);
+void unisort(char tab[][STRBUFFER], unsigned int *last);
 void usage(void);
 
 #endif /* _NDISWRAPPER_H_ */
