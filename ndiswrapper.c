@@ -232,7 +232,7 @@ int loadinf(const char *filename) {
             nb_sections++;
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
             strcpy(sections[nb_sections-1]->name,"none");
-            sections[nb_sections-1]->data = (char**)malloc(DATABUFFER*sizeof(char*));
+            sections[nb_sections-1]->data = (char**)malloc(LINEBUFFER*sizeof(char*));
             sections[nb_sections-1]->datalen = 0;
         }
         lbracket = strchr(s,'[');
@@ -242,7 +242,7 @@ int loadinf(const char *filename) {
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
             strncpy(sections[nb_sections-1]->name, lbracket+1, rbracket-lbracket-1);
             sections[nb_sections-1]->name[rbracket-lbracket-1] = '\0';
-            sections[nb_sections-1]->data = (char**)malloc(DATABUFFER*sizeof(char*));
+            sections[nb_sections-1]->data = (char**)malloc(LINEBUFFER*sizeof(char*));
             sections[nb_sections-1]->datalen = 0;
         }
         else {

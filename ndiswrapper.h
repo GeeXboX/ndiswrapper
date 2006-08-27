@@ -28,7 +28,6 @@
 
 #define LINEBUFFER        512
 #define STRBUFFER         256
-#define DATABUFFER        256
 
 #define WRAP_PCI_BUS      5
 #define WRAP_PCMCIA_BUS   8
