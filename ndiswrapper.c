@@ -1245,13 +1245,13 @@ void unisort(char tab[][STRBUFFER], unsigned int *last) {
         change = 0;
         for (i = 0; i < *last - 1; i++) {
             for (j = 0; j < i; j++) {
-                if (!strcasecmp(tab[i], tab[j])) {
+                if (!strcmp(tab[i], tab[j])) {
                     *last = *last - 1;
                     strcpy(tab[i], tab[*last]);
                     change = 1;
                 }
             }
-            if (strcasecmp(tab[i+1], tab[i]) < 0) {
+            if (strcmp(tab[i+1], tab[i]) < 0) {
                 strcpy(tmp, tab[i]);
                 strcpy(tab[i], tab[i+1]);
                 strcpy(tab[i+1], tmp);
