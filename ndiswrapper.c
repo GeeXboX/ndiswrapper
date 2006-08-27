@@ -1149,10 +1149,10 @@ char *stripquotes(char *s) {
 }
 
 char *remComment(char *s) {
-    char ps[1][STRBUFFER];
-
-    regex(s, "[^;]*", ps);
-    strcpy(s, ps[0]);
+    char *comment;
+    comment = strchr(s, ';');
+    if (comment)
+        *comment = '\0';
     return s;
 }
 
