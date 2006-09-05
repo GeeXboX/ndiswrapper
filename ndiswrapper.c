@@ -39,6 +39,10 @@
 
 /* global variables */
 unsigned int nb_sections = 0;
+char *confdir = CONFDIR;
+char alt_install_file[STRBUFFER];
+unsigned int alt_install = 0;
+unsigned int driver_num = 0;
 struct DEF_SECTION **sections;
 
 struct DEF_STRVER strings[STRBUFFER];
@@ -70,6 +74,7 @@ int main(int argc, char **argv) {
     strcpy(param_fixlist[3].m, "AdhocGMode|0");
 
     /* main initialisation */
+    int loc;
     int res = 0;
 
     /* arguments */
@@ -78,8 +83,15 @@ int main(int argc, char **argv) {
         return res;
     }
 
-    if (!strcmp(argv[1], "-i") && argc == 3)
+    if (!strcmp(argv[1], "-i") && argc < 7) {
+        for (loc = 3; loc < argc; loc++) {
+            if (!strcmp(argv[loc-1], "-o"))
+                confdir = argv[loc];
+            if (!strcmp(argv[loc], "-a"))
+                alt_install = 1;
+        }
         res = install(argv[2]);
+    }
 /*
     else if (!strcmp(argv[1], "-d") && argc == 4)
         res = devid_driver(argv[2], argv[3]);
@@ -145,6 +157,8 @@ int install(const char *inf) {
     strncpy(driver_name, slash+1, ext-slash-1);
     driver_name[ext-slash] = '\0';
     lc(driver_name);
+    if (alt_install)
+        snprintf(alt_install_file, sizeof(alt_install_file), "%s/%s/ndiswrapper", confdir, driver_name);
     strncpy(instdir, inf, slash-inf);
     instdir[slash-inf+1] = '\0';
 
@@ -155,13 +169,13 @@ int install(const char *inf) {
 
     sections = (struct DEF_SECTION**)malloc(STRBUFFER * sizeof(struct DEF_SECTION*));
     if(loadinf(inf)) {
-        if ((dir = opendir(CONFDIR)) != NULL)
+        if ((dir = opendir(confdir)) != NULL)
             closedir(dir);
         else
-            mkdir(CONFDIR, 0777);
+            mkdir(confdir, 0777);
 
         printf("Installing %s\n", driver_name);
-        snprintf(install_dir, sizeof(install_dir), "%s/%s", CONFDIR, driver_name);
+        snprintf(install_dir, sizeof(install_dir), "%s/%s", confdir, driver_name);
         if (mkdir(install_dir, 0777) == -1) {
             printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
             return -1;
@@ -195,13 +209,13 @@ int isInstalled(const char *name) {
     struct dirent *dp;
     struct stat st;
 
-    stat(CONFDIR, &st);
+    stat(confdir, &st);
     if (!S_ISDIR(st.st_mode))
         return 0;
 
-    d = opendir(CONFDIR);
+    d = opendir(confdir);
     while ((dp = readdir(d))) {
-        snprintf(f_path, sizeof(f_path), "%s/%s", CONFDIR, dp->d_name);
+        snprintf(f_path, sizeof(f_path), "%s/%s", confdir, dp->d_name);
         stat(f_path, &st);
         if (S_ISDIR(st.st_mode) && !strcmp(name, dp->d_name)) {
             installed = 1;
@@ -279,19 +293,30 @@ void processPCIFuzz(void) {
     unsigned int i;
     char bl[STRBUFFER];
     char src[STRBUFFER], dst[STRBUFFER];
+    FILE *f;
 
     for (i = 0; i < nb_fuzzlist; i++) {
         if (strcmp(fuzzlist[i].key, fuzzlist[i].val) != 0) {
             strcpy(bl, fuzzlist[i].key);
             getBuslist(bl);
 
-            /* source file */
-            snprintf(src, sizeof(src), "%s/%s/%s.%s.conf", CONFDIR, driver_name, fuzzlist[i].val, bl);
+            if (alt_install) {
+                /* source file */
+                snprintf(src, sizeof(src), "%s.%s.conf", fuzzlist[i].val, bl);
 
-            /* destination link */
-            snprintf(dst, sizeof(dst), "%s/%s/%s.%s.conf", CONFDIR, driver_name, fuzzlist[i].key, bl);
+                /* destination link */
+                snprintf(dst, sizeof(dst), "%s.%s.conf", fuzzlist[i].key, bl);
+                f = fopen(alt_install_file, "a");
+                fprintf(f, "%s %s\n", src, dst);
+                fclose(f);
+            } else {
+                /* source file */
+                snprintf(src, sizeof(src), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].val, bl);
 
-            symlink(src, dst);
+                /* destination link */
+                snprintf(dst, sizeof(dst), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].key, bl);
+                symlink(src, dst);
+            }
         }
     }
 }
@@ -407,7 +432,7 @@ int remove(const char *name) {
         return -1;
     }
     else {
-        snprintf(driver, sizeof(driver), "%s/%s", CONFDIR, name);
+        snprintf(driver, sizeof(driver), "%s/%s", confdir, name);
         if (rmtree(driver))
             return 0;
     }
@@ -609,7 +634,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     char param_tab[STRBUFFER][STRBUFFER];
     char keyval[2][STRBUFFER];
     char sec[STRBUFFER], addreg[STRBUFFER];
-    char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER];
+    char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER], alt_filename[STRBUFFER];
     char ver[STRBUFFER], provider[STRBUFFER], providerstring[STRBUFFER];
     char *tmp;
     struct DEF_SECTION *dev = NULL;
@@ -672,7 +697,20 @@ int parseDevice(const char *flavour, const char *device_sect,
     if (bus == WRAP_PCI_BUS || bus == WRAP_PCMCIA_BUS)
         addPCIFuzzEntry(device, vendor, subvendor, subdevice, bt);
 
-    snprintf(file, sizeof(file), "%s/%s/%s", CONFDIR, driver_name, filename);
+    if (alt_install) {
+        snprintf(file, sizeof(file), "driver%d", driver_num);
+        snprintf(alt_filename, sizeof(file), "%s", filename);
+        if ((f = fopen(alt_install_file, "a"))) {
+            fprintf(f, "%s %s\n", file, alt_filename);
+            fclose(f);
+        } else {
+            printf("Unable to create file %s\n", alt_install_file);
+            return -1;
+        }
+        snprintf(file, sizeof(file), "%s/%s/driver%d", confdir, driver_name, driver_num++);
+    } else {
+        snprintf(file, sizeof(file), "%s/%s/%s", confdir, driver_name, filename);
+    }
     if (!(f = fopen(file, "w"))) {
         printf("Unable to create file %s\n", filename);
         return -1;
@@ -1002,7 +1040,7 @@ void copy_file(char *file) {
         lc(newname);
         if (!nocopy) {
             snprintf(src, sizeof(src), "%s/%s", instdir, realname);
-            snprintf(dst, sizeof(dst), "%s/%s/%s", CONFDIR, driver_name, newname);
+            snprintf(dst, sizeof(dst), "%s/%s/%s", confdir, driver_name, newname);
             copy(src, dst, 0644);
         }
     }
@@ -1265,6 +1303,9 @@ void usage(void) {
     printf("Usage: ndiswrapper OPTION\n\n");
     printf("Manage ndis drivers for ndiswrapper.\n");
     printf("-i inffile        Install driver described by 'inffile'\n");
+    printf("    Optionally with:\n");
+    printf("    -o output_dir   Use alternate install directory 'output_dir'\n");
+    printf("    -a              Use alternate output format\n");
 /*
     printf("-d devid driver   Use installed 'driver' for 'devid'\n");
 */
