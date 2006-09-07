@@ -42,7 +42,7 @@ unsigned int nb_sections = 0;
 char *confdir = CONFDIR;
 char alt_install_file[STRBUFFER];
 unsigned int alt_install = 0;
-unsigned int driver_num = 0;
+unsigned int nb_driver = 0;
 struct DEF_SECTION **sections;
 
 struct DEF_STRVER strings[STRBUFFER];
@@ -698,7 +698,7 @@ int parseDevice(const char *flavour, const char *device_sect,
         addPCIFuzzEntry(device, vendor, subvendor, subdevice, bt);
 
     if (alt_install) {
-        snprintf(file, sizeof(file), "driver%d", driver_num);
+        snprintf(file, sizeof(file), "driver%d", nb_driver);
         snprintf(alt_filename, sizeof(file), "%s", filename);
         if ((f = fopen(alt_install_file, "a"))) {
             fprintf(f, "%s %s\n", file, alt_filename);
@@ -707,7 +707,7 @@ int parseDevice(const char *flavour, const char *device_sect,
             printf("Unable to create file %s\n", alt_install_file);
             return -1;
         }
-        snprintf(file, sizeof(file), "%s/%s/driver%d", confdir, driver_name, driver_num++);
+        snprintf(file, sizeof(file), "%s/%s/driver%d", confdir, driver_name, nb_driver++);
     } else {
         snprintf(file, sizeof(file), "%s/%s/%s", confdir, driver_name, filename);
     }
