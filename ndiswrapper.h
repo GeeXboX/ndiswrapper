@@ -69,7 +69,7 @@ int install(const char *inf);
 int isInstalled(const char *name);
 int loadinf(const char *filename);
 int initStrings(void);
-void processPCIFuzz(void);
+int processPCIFuzz(void);
 void addPCIFuzzEntry(const char *vendor, const char *device,
                      const char *subvendor, const char *subdevice,
                      const char *bt);

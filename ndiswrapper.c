@@ -140,10 +140,11 @@ int install(const char *inf) {
     DIR *dir;
     unsigned int i, j;
     char *slash, *ext;
+    int retval = -1;
 
     if (!file_exists(inf)) {
         printf("Unable to locate %s\n", inf);
-        return -1;
+        return retval;
     }
 
     ext = strstr(inf,".inf");
@@ -152,7 +153,7 @@ int install(const char *inf) {
     slash = strrchr(inf,'/');
     if (!slash || !ext) {
         printf("%s is not a valid inf filename, please provide in format /path/filename.inf\n",inf);
-        return -1;
+        return retval;
     }
     strncpy(driver_name, slash+1, ext-slash-1);
     driver_name[ext-slash] = '\0';
@@ -164,7 +165,7 @@ int install(const char *inf) {
 
     if (isInstalled(driver_name)) {
         printf("%s is already installed. Use -e to remove it\n", driver_name);
-        return -1;
+        return retval;
     }
 
     sections = (struct DEF_SECTION**)calloc(1, STRBUFFER * sizeof(struct DEF_SECTION*));
@@ -178,16 +179,17 @@ int install(const char *inf) {
         snprintf(install_dir, sizeof(install_dir), "%s/%s", confdir, driver_name);
         if (mkdir(install_dir, 0777) == -1) {
             printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
-            return -1;
+            return retval;
         }
         initStrings();
         parseVersion();
         snprintf(dst, sizeof(dst), "%s/%s.inf", install_dir, driver_name);
         if (!copy(inf, dst, 0644)) {
             printf("couldn't copy %s\n", inf);
-            return -1;
+            return retval;
         }
-        processPCIFuzz();
+        if (processPCIFuzz() )
+            retval = 0;
     }
     if(sections) {
         for (i = 0; i < nb_sections; i++)
@@ -199,7 +201,7 @@ int install(const char *inf) {
             }
         free(sections);
     }
-    return 0;
+    return retval;
 }
 
 int isInstalled(const char *name) {
@@ -232,10 +234,14 @@ int loadinf(const char *filename) {
     FILE *f;
     int res = 0;
 
-    if(!sections)
+    if(!sections) {
+        printf("Memory for 'sections' not allocated!\n");
         return res;
-    if ((f = fopen(filename, "r")) == NULL)
+    }
+    if ((f = fopen(filename, "r")) == NULL) {
+        printf("Could not open %s for reading!\n", filename);
         return res;
+    }
 
     while (fgets(s, sizeof(s), f)) {
         /* Convert from unicode */
@@ -276,8 +282,10 @@ int initStrings(void) {
     struct DEF_SECTION *s = NULL;
 
     s = getSection("strings");
-    if (s == NULL)
+    if (s == NULL) {
+        printf("Could not find section 'strings' in inf file!\n");
         return -1;
+    }
 
     for (i = 0; i < s->datalen; i++) {
         getKeyVal(s->data[i], keyval);
@@ -289,7 +297,7 @@ int initStrings(void) {
     return 1;
 }
 
-void processPCIFuzz(void) {
+int processPCIFuzz(void) {
     unsigned int i;
     char bl[STRBUFFER];
     char src[STRBUFFER], dst[STRBUFFER];
@@ -307,18 +315,30 @@ void processPCIFuzz(void) {
                 /* destination link */
                 snprintf(dst, sizeof(dst), "%s.%s.conf", fuzzlist[i].key, bl);
                 f = fopen(alt_install_file, "a");
-                fprintf(f, "%s %s\n", src, dst);
-                fclose(f);
+                if (f) {
+                    fprintf(f, "%s %s\n", src, dst);
+                    fclose(f);
+                    return 1;
+                } else {
+                    printf("Failed to open %s file!\n", alt_install_file);
+                    return 0;
+                }
             } else {
                 /* source file */
                 snprintf(src, sizeof(src), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].val, bl);
 
                 /* destination link */
                 snprintf(dst, sizeof(dst), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].key, bl);
-                symlink(src, dst);
+                if (0 == symlink(src, dst))
+                    return 1;
+                else {
+                    printf("Failed to create symlink!\n");
+                    return 0;
+                }
             }
         }
     }
+    return 1;
 }
 
 void addPCIFuzzEntry(const char *vendor, const char *device,
@@ -435,8 +455,11 @@ int remove(const char *name) {
         snprintf(driver, sizeof(driver), "%s/%s", confdir, name);
         if (rmtree(driver))
             return 0;
+        else {
+            printf("Could not remove driver!\n");
+            return -1;
+        }
     }
-    return -1;
 }
 
 /*
@@ -457,8 +480,10 @@ int parseVersion(void) {
     struct DEF_SECTION *s = NULL;
 
     s = getSection("version");
-    if (!s)
+    if (!s) {
+        printf("Could not find section 'version' in inf file!\n");
         return -1;
+    }
 
     // Split
     for (i = 0; i < s->datalen; i++) {
@@ -499,8 +524,10 @@ int parseMfr(void) {
     struct DEF_SECTION *manu = NULL;
 
     manu = getSection("manufacturer");
-    if (!manu)
+    if (!manu) {
+        printf("Could not find section 'manufacturer' in inf file!\n");
         return -1;
+    }
 
     for (i = 0; i < manu->datalen; i++) {
         getKeyVal(manu->data[i], keyval);
@@ -571,8 +598,10 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     struct DEF_SECTION *vend = NULL;
 
     vend = getSection(vendor_name);
-    if (vend == NULL)
+    if (vend == NULL) {
+        printf("Could not find section for %s in inf file!\n", vendor_name);
         return -1;
+    }
 
     for (i = 0; i < vend->datalen; i++) {
         getKeyVal(vend->data[i], keyval);
@@ -1052,10 +1081,14 @@ int copy(const char *file_src, const char *file_dst, int mod) {
     int nbytes;
     char rwbuf[1024];
 
-    if ((infile = open(file_src, O_RDONLY)) == -1)
+    if ((infile = open(file_src, O_RDONLY)) == -1) {
+        printf("Unable to open %s file read-only!\n", file_src);
         return -1;
-    if ((outfile = open(file_dst, O_WRONLY | O_CREAT | O_TRUNC, mod)) == -1)
+    }
+    if ((outfile = open(file_dst, O_WRONLY | O_CREAT | O_TRUNC, mod)) == -1) {
+        printf("Unable to open %s file for create/write/appending!\n", file_dst);
         return -1;
+    }
 
     while ((nbytes = read(infile, rwbuf, 1024)) > 0)
         write(outfile, rwbuf, nbytes);
