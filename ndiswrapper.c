@@ -167,7 +167,7 @@ int install(const char *inf) {
         return -1;
     }
 
-    sections = (struct DEF_SECTION**)malloc(STRBUFFER * sizeof(struct DEF_SECTION*));
+    sections = (struct DEF_SECTION**)calloc(1, STRBUFFER * sizeof(struct DEF_SECTION*));
     if(loadinf(inf)) {
         if ((dir = opendir(confdir)) != NULL)
             closedir(dir);
@@ -246,7 +246,7 @@ int loadinf(const char *filename) {
             nb_sections++;
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
             strcpy(sections[nb_sections-1]->name,"none");
-            sections[nb_sections-1]->data = (char**)malloc(LINEBUFFER*sizeof(char*));
+            sections[nb_sections-1]->data = (char**)calloc(1, LINEBUFFER*sizeof(char*));
             sections[nb_sections-1]->datalen = 0;
         }
         lbracket = strchr(s,'[');
@@ -256,7 +256,7 @@ int loadinf(const char *filename) {
             sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
             strncpy(sections[nb_sections-1]->name, lbracket+1, rbracket-lbracket-1);
             sections[nb_sections-1]->name[rbracket-lbracket-1] = '\0';
-            sections[nb_sections-1]->data = (char**)malloc(LINEBUFFER*sizeof(char*));
+            sections[nb_sections-1]->data = (char**)calloc(1, LINEBUFFER*sizeof(char*));
             sections[nb_sections-1]->datalen = 0;
         }
         else {
@@ -514,7 +514,7 @@ int parseMfr(void) {
             flavour[0] = '\0';
             // Split
             k = 0;
-            flavours = (char **)malloc(LINEBUFFER*sizeof(char*));
+            flavours = (char **)calloc(1, LINEBUFFER*sizeof(char*));
             if ((tmp = strtok(keyval[1], ",")) != NULL) {
                 flavours[k] = strdup(tmp);
                 stripquotes(trim(flavours[k]));
@@ -666,7 +666,7 @@ int parseDevice(const char *flavour, const char *device_sect,
         return -1;
     }
 
-    copy_files = (char **)malloc(LINEBUFFER*sizeof(char*));
+    copy_files = (char **)calloc(1, LINEBUFFER*sizeof(char*));
     
     for (i = 0; i < dev->datalen; i++) {
         getKeyVal(dev->data[i], keyval);
@@ -736,7 +736,7 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     // Split
     i = 0;
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
+    lines = (char **)calloc(1, LINEBUFFER*sizeof(char*));
     if ((tmp = strtok(addreg, ",")) != NULL) {
         lines[i] = strdup(tmp);
         while ((tmp = strtok(NULL, ",")) != NULL)
@@ -974,7 +974,7 @@ int copyfiles(const char *copy_name) {
         return -1;
     }
 
-    files = (char **)malloc(LINEBUFFER*sizeof(char*));
+    files = (char **)calloc(1, LINEBUFFER*sizeof(char*));
     for (i = 0; i < copy->datalen; i++) {
         if (copy->data[i][0] == '[')
             break;
