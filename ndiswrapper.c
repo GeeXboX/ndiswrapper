@@ -564,7 +564,7 @@ int parseMfr(void) {
             else {
                 l = k + 1;
                 for (k = 1; k < l; k++) {
-                    regex(flavours[k], "\\s*(\\S+)\\s*", sp);
+                    regex(flavours[k], "[[:space:]]*([^[:space:]]+)[[:space:]]*", sp);
                     if (!strcasecmp(sp[1], "NT.5.1")) {
                         // This is the best (XP)
                         snprintf(section, sizeof(section), "%s.%s", flavours[0], sp[1]);
@@ -1204,9 +1204,9 @@ char *lc(char *data) {
 char *trim(char *s) {
     char ps[1][STRBUFFER];
 
-    regex(s, "\\S.*", ps);
+    regex(s, "[^[:space:]].*", ps);
     strcpy(s, ps[0]);
-    regex(s, ".*\\S", ps);
+    regex(s, ".*[^[:space:]]", ps);
     strcpy(s, ps[0]);
     return s;
 }
