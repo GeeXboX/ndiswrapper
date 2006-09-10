@@ -46,7 +46,12 @@
 #define PS4 "PCI\\\\VEN_([0-9A-Za-z]+)&DEV_([0-9A-Za-z]+)&SUBSYS_([0-9A-Za-z]{4})([^[:space:]]{4})"
 #define PS5 "PCI\\\\VEN_([0-9A-Za-z]+)&DEV_([0-9A-Za-z]+)"
 #define PS6 "USB\\\\VID_([0-9A-Za-z]+)&PID_([0-9A-Za-z]+)"
- 
+
+/* this is required on windows */
+#ifndef O_BINARY
+#define O_BINARY (0)
+#endif
+
 /* Use structure for replace Perl hash */
 struct DEF_SECTION {
     char name[STRBUFFER];

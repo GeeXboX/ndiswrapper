@@ -27,13 +27,18 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <fcntl.h>
-#include <unistd.h>     /* open close read write symlink mkdir rmdir */
 #include <ctype.h>      /* toupper tolower */
 #include <sys/types.h>  /* size_t */
 #include <sys/stat.h>   /* stat */
 #include <dirent.h>     /* opendir closedir readdir */
 #include <regex.h>      /* regexec regfree regcomp */
 #include <string.h>     /* strcat strcpy strcmp strcasecmp strncasecmp strchr strrchr strlen strncpy */
+
+#ifdef _WIN32
+#include <io.h>         /* open close read write mkdir rmdir */
+#else
+#include <unistd.h>     /* open close read write symlink mkdir rmdir */
+#endif
 
 #include "ndiswrapper.h"
 
@@ -247,7 +252,7 @@ int loadinf(const char *filename) {
         printf("Memory for 'sections' not allocated!\n");
         return res;
     }
-    if ((f = fopen(filename, "r")) == NULL) {
+    if ((f = fopen(filename, "rb")) == NULL) {
         printf("Could not open %s for reading!\n", filename);
         return res;
     }
@@ -325,7 +330,7 @@ int processPCIFuzz(void) {
 
                 /* destination link */
                 snprintf(dst, sizeof(dst), "%s.%s.conf", fuzzlist[i].key, bl);
-                f = fopen(alt_install_file, "a");
+                f = fopen(alt_install_file, "ab");
                 if (f) {
                     fprintf(f, "%s %s\n", src, dst);
                     fclose(f);
@@ -746,7 +751,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     if (alt_install) {
         snprintf(file, sizeof(file), "driver%d", nb_driver);
         snprintf(alt_filename, sizeof(file), "%s", filename);
-        if ((f = fopen(alt_install_file, "a"))) {
+        if ((f = fopen(alt_install_file, "ab"))) {
             fprintf(f, "%s %s\n", file, alt_filename);
             fclose(f);
         } else {
@@ -757,7 +762,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     } else {
         snprintf(file, sizeof(file), "%s/%s/%s", confdir, driver_name, filename);
     }
-    if (!(f = fopen(file, "w"))) {
+    if (!(f = fopen(file, "wb"))) {
         printf("Unable to create file %s\n", filename);
         return -1;
     }
@@ -1100,11 +1105,11 @@ int copy(const char *file_src, const char *file_dst, int mod) {
     int nbytes;
     char rwbuf[1024];
 
-    if ((infile = open(file_src, O_RDONLY)) == -1) {
+    if ((infile = open(file_src, O_RDONLY | O_BINARY)) == -1) {
         printf("Unable to open %s file read-only!\n", file_src);
         return -1;
     }
-    if ((outfile = open(file_dst, O_WRONLY | O_CREAT | O_TRUNC, mod)) == -1) {
+    if ((outfile = open(file_dst, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, mod)) == -1) {
         printf("Unable to open %s file for create/write/appending!\n", file_dst);
         return -1;
     }
