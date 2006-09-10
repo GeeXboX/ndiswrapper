@@ -43,9 +43,9 @@
 #define PS1 "([^,]*),([^,]*),([^,]*),([^,]*),(.*)"
 #define PS2 "ndi\\\\params\\\\(.+)"
 #define PS3 "(.+)\\\\.*"
-#define PS4 "PCI\\\\VEN_(\\w+)&DEV_(\\w+)&SUBSYS_(\\w{4})(\\S{4})"
-#define PS5 "PCI\\\\VEN_(\\w+)&DEV_(\\w+)"
-#define PS6 "USB\\\\VID_(\\w+)&PID_(\\w+)"
+#define PS4 "PCI\\\\VEN_([0-9A-Za-z]+)&DEV_([0-9A-Za-z]+)&SUBSYS_([0-9A-Za-z]{4})([^[:space:]]{4})"
+#define PS5 "PCI\\\\VEN_([0-9A-Za-z]+)&DEV_([0-9A-Za-z]+)"
+#define PS6 "USB\\\\VID_([0-9A-Za-z]+)&PID_([0-9A-Za-z]+)"
  
 /* Use structure for replace Perl hash */
 struct DEF_SECTION {
