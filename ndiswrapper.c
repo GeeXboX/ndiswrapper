@@ -174,11 +174,19 @@ int install(const char *inf) {
         if ((dir = opendir(confdir)) != NULL)
             closedir(dir);
         else
+#ifdef _WIN32
+            mkdir(confdir);
+#else
             mkdir(confdir, 0777);
+#endif
 
         printf("Installing %s\n", driver_name);
         snprintf(install_dir, sizeof(install_dir), "%s/%s", confdir, driver_name);
+#ifdef _WIN32
+        if (mkdir(install_dir) == -1) {
+#else
         if (mkdir(install_dir, 0777) == -1) {
+#endif
             printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
             return retval;
         }
@@ -332,12 +340,16 @@ int processPCIFuzz(void) {
 
                 /* destination link */
                 snprintf(dst, sizeof(dst), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].key, bl);
+#ifdef _WIN32
+                copy(src, dst, 0644);
+#else
                 if (0 == symlink(src, dst))
                     return 1;
                 else {
                     printf("Failed to create symlink!\n");
                     return 0;
                 }
+#endif
             }
         }
     }
