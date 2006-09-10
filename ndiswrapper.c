@@ -325,7 +325,7 @@ int processPCIFuzz(void) {
                 }
             } else {
                 /* source file */
-                snprintf(src, sizeof(src), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].val, bl);
+                snprintf(src, sizeof(src), "%s.%s.conf", fuzzlist[i].val, bl);
 
                 /* destination link */
                 snprintf(dst, sizeof(dst), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].key, bl);
