@@ -1242,10 +1242,18 @@ char *trim(char *s) {
 }
 
 char *stripquotes(char *s) {
-    char ps[1][STRBUFFER];
+    char *start, *end, *copy;
 
-    regex(s, "[^\"]+", ps);
-    strcpy(s, ps[0]);
+    start = strchr(s, '"');
+    if (!start)
+        return(s);
+    end = strchr(start+1, '"');
+    if (!end)
+        return(s);
+    *end = '\0';
+    copy = strdup(start+1);
+    strcpy(s, copy);
+    free(copy);
     return s;
 }
 
