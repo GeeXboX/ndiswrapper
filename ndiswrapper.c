@@ -1226,12 +1226,18 @@ char *lc(char *data) {
 }
 
 char *trim(char *s) {
-    char ps[1][STRBUFFER];
+    char *ptr, *copy;
 
-    regex(s, "[^[:space:]].*", ps);
-    strcpy(s, ps[0]);
-    regex(s, ".*[^[:space:]]", ps);
-    strcpy(s, ps[0]);
+    ptr = strchr(s, '\0');
+    while (ptr > s && (*(ptr-1) == ' ' || *(ptr-1) == '\t' || *(ptr-1) == '\r' || *(ptr-1) == '\n'))
+        ptr--;
+    *ptr = '\0';
+    ptr = s;
+    while (*ptr == ' ' || *ptr == '\t')
+        ptr++;
+    copy = strdup(ptr);
+    strcpy(s, copy);
+    free(copy);
     return s;
 }
 
