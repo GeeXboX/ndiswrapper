@@ -10,6 +10,7 @@ ifndef PROJ
 	PROJ = ndiswrapper
 	STRIP = strip
 else
+	DEBUG = no
 	LDFLAGS += -static
 endif
 
