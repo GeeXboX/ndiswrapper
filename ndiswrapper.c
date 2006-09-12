@@ -88,10 +88,14 @@ int main(int argc, char **argv) {
         return res;
     }
 
-    if (!strcmp(argv[1], "-i") && argc < 7) {
+    /* optional argument */
+    for (loc = 4; loc < argc; loc++) {
+        if (!strcmp(argv[loc-1], "-o"))
+            confdir = argv[loc];
+    }
+
+    if (!strcmp(argv[1], "-i") && argc < 7 && argc > 2) {
         for (loc = 3; loc < argc; loc++) {
-            if (!strcmp(argv[loc-1], "-o"))
-                confdir = argv[loc];
             if (!strcmp(argv[loc], "-a"))
                 alt_install = 1;
         }
@@ -101,7 +105,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[1], "-d") && argc == 4)
         res = devid_driver(argv[2], argv[3]);
 */
-    else if (!strcmp(argv[1], "-e") && argc == 3)
+    else if (!strcmp(argv[1], "-e") && argc < 6 && argc > 2)
         res = remove(argv[2]);
 /*
     else if (!strcmp(argv[1], "-l") && argc == 2)
@@ -1370,11 +1374,10 @@ void unisort(char tab[][STRBUFFER], unsigned int *last) {
 }
 
 void usage(void) {
-    printf("Usage: ndiswrapper OPTION\n\n");
+    printf("Usage: ndiswrapper OPTION [-o]\n\n");
     printf("Manage ndis drivers for ndiswrapper.\n");
     printf("-i inffile        Install driver described by 'inffile'\n");
     printf("    Optionally with:\n");
-    printf("    -o output_dir   Use alternate install directory 'output_dir'\n");
     printf("    -a              Use alternate output format\n");
 /*
     printf("-d devid driver   Use installed 'driver' for 'devid'\n");
@@ -1388,4 +1391,7 @@ void usage(void) {
     printf("-v                Report version information\n");
     printf("\n\nwhere 'devid' is either PCIID or USBID of the form XXXX:XXXX\n");
 */
+    printf("\nOptional:\n");
+    printf("-o output_dir     Use alternate install directory 'output_dir'\n");
+    printf("                  (default: '/etc/ndiswrapper')\n");
 }
