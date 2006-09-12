@@ -315,6 +315,7 @@ int initStrings(void) {
 
 int processPCIFuzz(void) {
     unsigned int i;
+    int ret = 1;
     char bl[STRBUFFER];
     char src[STRBUFFER], dst[STRBUFFER];
     FILE *f;
@@ -348,17 +349,15 @@ int processPCIFuzz(void) {
 #ifdef _WIN32
                 copy(src, dst, 0644);
 #else
-                if (0 == symlink(src, dst))
-                    return 1;
-                else {
+                if (!file_exists(dst) && 0 != symlink(src, dst)) {
                     printf("Failed to create symlink!\n");
-                    return 0;
+                    ret = 0;
                 }
 #endif
             }
         }
     }
-    return 1;
+    return ret;
 }
 
 void addPCIFuzzEntry(const char *vendor, const char *device,
