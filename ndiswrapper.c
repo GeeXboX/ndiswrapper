@@ -183,19 +183,11 @@ int install(const char *inf) {
         if ((dir = opendir(confdir)) != NULL)
             closedir(dir);
         else
-#ifdef _WIN32
-            mkdir(confdir);
-#else
-            mkdir(confdir, 0777);
-#endif
+            my_mkdir(confdir);
 
         printf("Installing %s\n", driver_name);
         snprintf(install_dir, sizeof(install_dir), "%s/%s", confdir, driver_name);
-#ifdef _WIN32
-        if (mkdir(install_dir) == -1) {
-#else
-        if (mkdir(install_dir, 0777) == -1) {
-#endif
+        if (my_mkdir(install_dir) == -1) {
             printf("Unable to create directory %s. Make sure you are running as root\n", install_dir);
             return retval;
         }
@@ -1007,6 +999,7 @@ void def_buslist(const char *key, const char *val) {
  * - findfile    : depend of copy_file
  * - file_exists : test if a file exists
  * - rmtree      : remove a dir
+ * - my_mkdir    : create a directory
  *
  */
 
@@ -1198,6 +1191,14 @@ int rmtree(const char *dir) {
     if (rmdir(dir) == 0)
         return 1;
     return 0;
+}
+
+int my_mkdir(const char *path) {
+#ifdef _WIN32
+  return mkdir(path);
+#else
+  return mkdir(path, 0777);
+#endif
 }
 
 /*

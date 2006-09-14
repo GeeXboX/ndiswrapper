@@ -113,6 +113,7 @@ int finddir(char *file);
 int findfile(const char *dir, char *file);
 int file_exists(const char *file);
 int rmtree(const char *dir);
+int my_mkdir(const char *path);
 
 /* strings processing */
 char *uc(char *data);
