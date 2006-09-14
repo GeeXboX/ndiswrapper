@@ -22,7 +22,9 @@ all: ndiswrapper
 
 ndiswrapper: $(SRC) $(HEAD)
 	$(CC) $(SRC) $(CFLAGS) -o $(PROJ) $(LDFLAGS)
+ifeq ($(DEBUG),no)
 	$(STRIP) $(PROJ)
+endif
 
 clean:
 	rm -f $(PROJ)
