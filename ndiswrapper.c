@@ -467,11 +467,18 @@ char *substStr(char *s) {
 }
 
 void getKeyVal(const char *line, char tmp[2][STRBUFFER]) {
-    char ps[3][STRBUFFER];
-
-    regex(line, "(.+)=(.+)", ps);
-    strcpy(tmp[0], trim(ps[1]));
-    strcpy(tmp[1], trim(ps[2]));
+    char *ptr;
+    ptr = strchr(line, '=');
+    if (ptr) {
+        strncpy(tmp[0], line, ptr-line);
+        tmp[0][ptr-line] = '\0';
+        strcpy(tmp[1], ptr+1);
+        trim(tmp[0]);
+        trim(tmp[1]);
+    } else {
+        tmp[0][0] = '\0';
+        tmp[1][0] = '\0';
+    }
 }
 
 /*
