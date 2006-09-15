@@ -1107,7 +1107,7 @@ int parseMfr(void) {
 int parseVersion(void) {
     unsigned int i = 0;
     char keyval[2][STRBUFFER];
-    char ps[1][STRBUFFER];
+    char *ptr1, *ptr2;
     struct DEF_SECTION *s = NULL;
 
     s = getSection("version");
@@ -1128,8 +1128,10 @@ int parseVersion(void) {
             def_version(keyval[0], keyval[1]);
         }
         if (!strcmp(keyval[0], "ClassGUID")) {
-            regex(keyval[1], "[^{]+[^}]", ps);
-            strcpy(classguid, ps[0]);
+            ptr1 = strchr(keyval[1], '{');
+            ptr2 = strchr(keyval[1], '}');
+            strncpy(classguid, ptr1+1, ptr2-ptr1-1);
+            classguid[ptr2-ptr1-1]='\0';
             lc(classguid);
         }
     }
