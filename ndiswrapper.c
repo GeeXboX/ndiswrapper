@@ -569,15 +569,18 @@ int copy(const char *file_src, const char *file_dst, int mod) {
 
 void copy_file(char *file) {
     int nocopy = 0;
-    char sp[2][STRBUFFER];
+    char *ptr;
     char newname[STRBUFFER];
     char src[STRBUFFER], dst[STRBUFFER];
     char dir[STRBUFFER];
     char realname[STRBUFFER];
 
-    regex(file, "^;(.*)", sp);
-    if (sp[0][0] != '\0')
-        strcpy(file, sp[1]);
+    ptr = file;
+    if (*ptr != '\0')
+        while (*ptr != '\0') {
+            *ptr = *(ptr+1);
+            ptr++;
+        }
     trim(remComment(file));
 
     /*
