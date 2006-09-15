@@ -1162,7 +1162,7 @@ int parseVersion(void) {
 int initStrings(void) {
     unsigned int i = 0;
     char keyval[2][STRBUFFER];
-    char ps[1][STRBUFFER];
+    char ps[STRBUFFER], *ptr1, *ptr2;
     struct DEF_SECTION *s = NULL;
 
     s = getSection("strings");
@@ -1174,8 +1174,11 @@ int initStrings(void) {
     for (i = 0; i < s->datalen; i++) {
         getKeyVal(s->data[i], keyval);
         if (keyval[1][0] != '\0') {
-            regex(keyval[1], "[^\"]+", ps);
-            def_strings(keyval[0], ps[0]);
+            ptr1 = strchr(keyval[1], '"');
+            ptr2 = strchr(ptr1+1, '"');
+            strncpy(ps, ptr1+1, ptr2-ptr1-1);
+            ps[ptr2-ptr1-1]='\0';
+            def_strings(keyval[0], ps);
         }
     }
     return 1;
