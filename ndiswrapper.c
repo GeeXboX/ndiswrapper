@@ -585,7 +585,7 @@ void copy_file(char *file) {
     char realname[STRBUFFER];
 
     ptr = file;
-    if (*ptr != '\0')
+    if (file[0] == ';')
         while (*ptr != '\0') {
             *ptr = *(ptr+1);
             ptr++;
@@ -629,7 +629,7 @@ int copyfiles(const char *copy_name) {
     char *tmp;
     struct DEF_SECTION *copy = NULL;
 
-    if (copy_name[0] != '\0') {
+    if (copy_name[0] == '@') {
         copy_ptr = strdup(copy_name+1);
         copy_file(copy_ptr);
         free(copy_ptr);
