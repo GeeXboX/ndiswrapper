@@ -615,14 +615,15 @@ void copy_file(char *file) {
 
 int copyfiles(const char *copy_name) {
     unsigned int i = 0, k, l;
-    char sp[2][STRBUFFER];
+    char *copy_ptr;
     char **files;
     char *tmp;
     struct DEF_SECTION *copy = NULL;
 
-    regex(copy_name, "^@(.*)", sp);
-    if (sp[0][0] != '\0') {
-        copy_file(sp[1]);
+    if (copy_name[0] != '\0') {
+        copy_ptr = strdup(copy_name+1);
+        copy_file(copy_ptr);
+        free(copy_ptr);
         return 1;
     }
 
