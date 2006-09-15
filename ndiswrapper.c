@@ -999,7 +999,6 @@ void def_buslist(const char *key, const char *val) {
  * - findfile    : depend of copy_file
  * - file_exists : test if a file exists
  * - rmtree      : remove a dir
- * - my_mkdir    : create a directory
  *
  */
 
@@ -1191,14 +1190,6 @@ int rmtree(const char *dir) {
     if (rmdir(dir) == 0)
         return 1;
     return 0;
-}
-
-int my_mkdir(const char *path) {
-#ifdef _WIN32
-  return mkdir(path);
-#else
-  return mkdir(path, 0777);
-#endif
 }
 
 /*

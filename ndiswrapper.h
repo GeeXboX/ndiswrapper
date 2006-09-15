@@ -69,6 +69,14 @@ struct DEF_FIXLIST {
     char m[16];
 };
 
+static inline int my_mkdir(const char *path) {
+#ifdef _WIN32
+    return mkdir(path);
+#else
+    return mkdir(path, 0777);
+#endif
+}
+
 /* inf installation */
 int install(const char *inf);
 int isInstalled(const char *name);
@@ -113,7 +121,6 @@ int finddir(char *file);
 int findfile(const char *dir, char *file);
 int file_exists(const char *file);
 int rmtree(const char *dir);
-int my_mkdir(const char *path);
 
 /* strings processing */
 char *uc(char *data);
