@@ -4,7 +4,6 @@ CC? = gcc
 CFLAGS += -Wall -Wextra
 
 SRC = ndiswrapper.c
-HEAD = ndiswrapper.h
 
 ifndef PROJ
 	PROJ = ndiswrapper
@@ -20,7 +19,7 @@ endif
 
 all: ndiswrapper
 
-ndiswrapper: $(SRC) $(HEAD)
+ndiswrapper: $(SRC)
 	$(CC) $(SRC) $(CFLAGS) -o $(PROJ) $(LDFLAGS)
 ifeq ($(DEBUG),no)
 	$(STRIP) $(PROJ)

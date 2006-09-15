@@ -40,7 +40,118 @@
 #include <unistd.h>     /* open close read write symlink mkdir rmdir */
 #endif
 
-#include "ndiswrapper.h"
+
+#define LINEBUFFER        512
+#define STRBUFFER         256
+
+#define WRAP_PCI_BUS      5
+#define WRAP_PCMCIA_BUS   8
+#define WRAP_USB_BUS      15
+
+#define CONFDIR           "/etc/ndiswrapper"
+#define ICASE             1
+
+/* regexec : must be a multiple of 3 */
+#define OVECCOUNT         30
+
+/* patterns */
+#define PS1 "([^,]*),([^,]*),([^,]*),([^,]*),(.*)"
+#define PS2 "ndi\\\\params\\\\(.+)"
+#define PS3 "(.+)\\\\.*"
+#define PS4 "PCI\\\\VEN_([0-9A-Za-z]+)&DEV_([0-9A-Za-z]+)&SUBSYS_([0-9A-Za-z]{4})([^[:space:]]{4})"
+#define PS5 "PCI\\\\VEN_([0-9A-Za-z]+)&DEV_([0-9A-Za-z]+)"
+#define PS6 "USB\\\\VID_([0-9A-Za-z]+)&PID_([0-9A-Za-z]+)"
+
+/* this is required on windows */
+#ifndef O_BINARY
+#define O_BINARY (0)
+#endif
+
+/* Use structure for replace Perl hash */
+struct DEF_SECTION {
+    char name[STRBUFFER];
+    char **data;
+    unsigned int datalen;
+};
+
+struct DEF_STRVER {
+    char key[STRBUFFER];
+    char val[STRBUFFER];
+};
+
+struct DEF_FIXLIST {
+    char n[16];
+    char m[16];
+};
+
+static inline int my_mkdir(const char *path) {
+#ifdef _WIN32
+    return mkdir(path);
+#else
+    return mkdir(path, 0777);
+#endif
+}
+
+/* inf installation */
+int install(const char *inf);
+int isInstalled(const char *name);
+int loadinf(const char *filename);
+int initStrings(void);
+int processPCIFuzz(void);
+void addPCIFuzzEntry(const char *vendor, const char *device,
+                     const char *subvendor, const char *subdevice,
+                     const char *bt);
+int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k);
+
+/* driver tools */
+int remove(const char *name);
+
+/* parsers */
+int parseVersion(void);
+int parseMfr(void);
+int parseVendor(const char *flavour, const char *vendor_name);
+int parseID(const char *id, int *bt, char *vendor,
+            char *device, char *subvendor, char *subdevice);
+int parseDevice(const char *flavour, const char *device_sect,
+                const char *device, const char *vendor,
+                const char *subvendor, const char *subdevice);
+
+/* hashing processing */
+void getKeyVal(const char *line, char tmp[2][STRBUFFER]);
+char *getString(char *s);
+char *getVersion(char *s);
+char *getFuzzlist(char *s);
+char *getBuslist(char *s);
+char *getFixlist(char *s);
+void def_strings(const char *key, const char *val);
+void def_version(const char *key, const char *val);
+void def_fuzzlist(const char *key, const char *val);
+void def_buslist(const char *key, const char *val);
+
+/* files processing */
+int copyfiles(const char *copy_name);
+void copy_file(char *file);
+int copy(const char *file_src, const char *file_dst, int mod);
+int finddir(char *file);
+int findfile(const char *dir, char *file);
+int file_exists(const char *file);
+int rmtree(const char *dir);
+
+/* strings processing */
+char *uc(char *data);
+char *lc(char *data);
+char *trim(char *s);
+char *stripquotes(char *s);
+char *remComment(char *s);
+char *substStr(char *s);
+
+/* others */
+int regex(const char *str_request, const char *str_regex,
+          char rmatch[][STRBUFFER], ...);
+struct DEF_SECTION *getSection(const char *needle);
+void unisort(char tab[][STRBUFFER], unsigned int *last);
+void usage(void);
+
 
 /* global variables */
 unsigned int nb_sections = 0;
