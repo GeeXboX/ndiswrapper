@@ -497,7 +497,7 @@ void getKeyVal(const char *line, char tmp[2][STRBUFFER]) {
 int finddir(char *file) {
     unsigned int i = 0;
     int res = -1;
-    char sp[3][STRBUFFER];
+    char sp[2][STRBUFFER], *ptr1, *ptr2;
     struct DEF_SECTION *sourcedisksfiles = NULL;
 
     sourcedisksfiles = getSection("sourcedisksfiles");
@@ -507,11 +507,20 @@ int finddir(char *file) {
     }
 
     for (i = 0; i < sourcedisksfiles->datalen; i++) {
-        regex(sourcedisksfiles->data[i], "(.+)=.+,+(.*)", sp);
+        ptr1 = sourcedisksfiles->data[i];
+        ptr2 = strchr(sourcedisksfiles->data[i],'=');
+        if (!ptr2)
+            continue;
+        strncpy(sp[0], ptr1, ptr2 - ptr1);
+        sp[0][ptr2 - ptr1] = '\0';
+        trim(sp[0]);
+        ptr2 = strrchr(ptr1, ',');
+        if (!ptr2)
+            continue;
+        strcpy(sp[1], ptr2+1);
         trim(sp[1]);
-        trim(sp[2]);
-        if (res == -1 && sp[1][0] != '\0' && sp[2][0] != '\0' && !strcasecmp(sp[1], file)) {
-            strcpy(file, sp[2]);
+        if (res == -1 && sp[0][0] != '\0' && sp[1][0] != '\0' && !strcasecmp(sp[0], file)) {
+            strcpy(file, sp[1]);
             res = 1;
         }
     }
