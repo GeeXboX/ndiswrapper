@@ -966,35 +966,35 @@ int parseDevice(const char *flavour, const char *device_sect,
 
 int parseID(const char *id, int *bt, char *vendor,
             char *device, char *subvendor, char *subdevice) {
-    char ps[5][STRBUFFER];
-
-    regex(id, PS4, ps);
-    if (ps[0][0] != '\0') {
+    char *ptr1, *ptr2, *ptr3;
+    ptr1 = strstr(id, "PCI\\VEN_");
+    ptr2 = strstr(id, "&DEV_");
+    ptr3 = strstr(id, "&SUBSYS_");
+    if (ptr1 && ptr2) {
         *bt = WRAP_PCI_BUS;
-        strcpy(vendor, ps[1]);
-        strcpy(device, ps[2]);
-        strcpy(subvendor, ps[4]);
-        strcpy(subdevice, ps[3]);
-    }
-    else {
-        regex(id, PS5, ps);
-        if (ps[0][0] != '\0') {
-            *bt = WRAP_PCI_BUS;
-            strcpy(vendor, ps[1]);
-            strcpy(device, ps[2]);
+        strncpy(vendor, ptr1+strlen("PCI\\VEN_"), 4);
+        vendor[4] = '\0';
+        strncpy(device, ptr2+strlen("&DEV_"), 4);
+        device[4] = '\0';
+        if (ptr3) {
+            strncpy(subdevice, ptr3+strlen("&SUBSYS_"), 4);
+            subdevice[4] = '\0';
+            strncpy(subvendor, ptr3+strlen("&SUBSYS_")+4, 4);
+            subvendor[4] = '\0';
+        } else {
             subvendor[0] = '\0';
             subdevice[0] = '\0';
         }
-        else {
-            regex(id, PS6, ps);
-            if (ps[0][0] != '\0') {
-                *bt = WRAP_USB_BUS;
-                strcpy(vendor, ps[1]);
-                strcpy(device, ps[2]);
-                subvendor[0] = '\0';
-                subdevice[0] = '\0';
-            }
-        }
+    } else {
+        ptr1 = strstr(id, "USB\\VID_");
+        ptr2 = strstr(id, "&PID_");
+        *bt = WRAP_USB_BUS;
+        strncpy(vendor, ptr1+strlen("USB\\VID_"), 4);
+        vendor[4] = '\0';
+        strncpy(device, ptr2+strlen("&PID_"), 4);
+        device[4] = '\0';
+        subvendor[0] = '\0';
+        subdevice[0] = '\0';
     }
     return 1;
 }
@@ -1004,8 +1004,8 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     int bt;
     char keyval[2][STRBUFFER];
     char section[STRBUFFER], id[STRBUFFER];
-    char vendor[STRBUFFER], device[STRBUFFER];
-    char subvendor[STRBUFFER], subdevice[STRBUFFER];
+    char vendor[5], device[5];
+    char subvendor[5], subdevice[5];
     struct DEF_SECTION *vend = NULL;
 
     vend = getSection(vendor_name);
