@@ -1288,14 +1288,18 @@ int processPCIFuzz(void) {
                     return 0;
                 }
             } else {
-                /* source file */
-                snprintf(src, sizeof(src), "%s.%s.conf", fuzzlist[i].val, bl);
-
                 /* destination link */
                 snprintf(dst, sizeof(dst), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].key, bl);
 #ifdef _WIN32
-                copy(src, dst, 0644);
+                /* source file */
+                snprintf(src, sizeof(src), "%s/%s/%s.%s.conf", confdir, driver_name, fuzzlist[i].val, bl);
+                if (!file_exists(dst) && 1 != copy(src, dst, 0644)) {
+                    printf("Failed to copy file!\n");
+                    ret = 0;
+                }
 #else
+                /* source file */
+                snprintf(src, sizeof(src), "%s.%s.conf", fuzzlist[i].val, bl);
                 if (!file_exists(dst) && 0 != symlink(src, dst)) {
                     printf("Failed to create symlink!\n");
                     ret = 0;
