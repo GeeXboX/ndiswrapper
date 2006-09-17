@@ -414,8 +414,9 @@ char *lc(char *data) {
 }
 
 char *trim(char *s) {
-    char *ptr, *copy = s;
-
+    char *ptr, *copy;
+    copy = s;
+    
     ptr = strchr(s, '\0');
     while (ptr > s && (*(ptr-1) == ' ' || *(ptr-1) == '\t' || *(ptr-1) == '\r' || *(ptr-1) == '\n'))
         ptr--;
@@ -423,12 +424,10 @@ char *trim(char *s) {
     ptr = s;
     while (*ptr == ' ' || *ptr == '\t')
         ptr++;
-    while (*ptr != '\0') {
-        *copy = *ptr;
-        copy++;
-        ptr++;
-    }
-    *copy = '\0';
+    do {
+        *(copy++) = *ptr;
+    } while (*(ptr++));
+
     return s;
 }
 
