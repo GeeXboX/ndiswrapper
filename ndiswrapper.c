@@ -25,7 +25,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>
 #include <fcntl.h>
 #include <ctype.h>      /* toupper tolower */
 #include <sys/types.h>  /* size_t */
@@ -50,6 +49,7 @@
 
 #define CONFDIR           "/etc/ndiswrapper"
 #define ICASE             1
+#define SCASE             0
 
 /* regexec : must be a multiple of 3 */
 #define OVECCOUNT         30
@@ -280,15 +280,7 @@ void def_buslist(const char *key, const char *val) {
  */
 
 int regex(const char *str_request, const char *str_regex,
-          char rmatch[][STRBUFFER], ...) {
-    // optional parameter
-    va_list pp;
-    va_start(pp, rmatch);
-    int icase = 0;
-    if (pp != NULL)
-        icase = va_arg(pp, int);
-    va_end(pp);
-
+          char rmatch[][STRBUFFER], int icase) {
     int err, match, start, end, res = 0;
     unsigned int i;
     char *text = NULL;
@@ -750,7 +742,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
 
     for (i = 0; i < reg->datalen; i++) {
         if (strcmp(reg->data[i], "") != 0) {
-            regex(reg->data[i], PS1, ps);
+            regex(reg->data[i], PS1, ps, SCASE);
             strcpy(p1, ps[2]);
             strcpy(p2, ps[3]);
             strcpy(p3, ps[4]);
@@ -762,7 +754,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
             if (p1[0] != '\0') {
                 if (regex(p1, PS2, ps, ICASE)) {
                     strcpy(param_t, ps[1]);
-                    regex(param_t, PS3, ps);
+                    regex(param_t, PS3, ps, SCASE);
                     strcpy(param_t, ps[1]);
                     if (strcmp(param, param_t) != 0) {
                         found = 0;
@@ -1091,7 +1083,7 @@ int parseMfr(void) {
             else {
                 l = k + 1;
                 for (k = 1; k < l; k++) {
-                    regex(flavours[k], "[[:space:]]*([^[:space:]]+)[[:space:]]*", sp);
+                    regex(flavours[k], "[[:space:]]*([^[:space:]]+)[[:space:]]*", sp, SCASE);
                     if (!strcasecmp(sp[1], "NT.5.1")) {
                         // This is the best (XP)
                         snprintf(section, sizeof(section), "%s.%s", flavours[0], sp[1]);
