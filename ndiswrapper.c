@@ -811,7 +811,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     unsigned int i = 0, j, k, push = 0, par_k = 0;
     char **lines;
     char **copy_files;
-    char param_tab[STRBUFFER][STRBUFFER];
+    char param_tab[LINEBUFFER][STRBUFFER];
     char keyval[2][STRBUFFER];
     char sec[STRBUFFER], addreg[STRBUFFER];
     char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER], alt_filename[STRBUFFER];
