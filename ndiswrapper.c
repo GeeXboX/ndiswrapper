@@ -80,8 +80,8 @@ struct DEF_STRVER {
 };
 
 struct DEF_FIXLIST {
-    char n[16];
-    char m[16];
+    char n[20];
+    char m[20];
 };
 
 static inline int my_mkdir(const char *path) {
@@ -109,7 +109,7 @@ unsigned int nb_version = 0;
 unsigned int nb_fuzzlist = 0;
 unsigned int nb_buslist = 0;
 
-struct DEF_FIXLIST param_fixlist[4];
+struct DEF_FIXLIST param_fixlist[5];
 
 char driver_name[STRBUFFER];
 char instdir[STRBUFFER];
@@ -717,7 +717,7 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
     if (subvendor[0] == '\0' || !strcmp(fuzz, s)) {
         strcpy(s2, s);
         if (subvendor[0] != '\0') {
-            snprintf(s2, sizeof(s2), "%s:%s:%s", s, subvendor, subdevice);
+            snprintf(s2, sizeof(s2), "%s:%s:%s", s, subdevice, subvendor);
         }
         def_fuzzlist(s, s2);
         def_buslist(s, bt);
@@ -774,6 +774,11 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
                     if (found == 2)
                         gotParam = 1;
                 }
+                else {
+                    strcpy(param, p2);
+                    strcpy(val, p4);
+                    gotParam = 1;
+                }
             }
             else {
                 strcpy(param, p2);
@@ -781,7 +786,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
                 gotParam = 1;
             }
 
-            if (gotParam && strcmp(param, "") != 0 && strcmp(param, "BusType") != 0) {
+            if (gotParam && strcmp(param, "") != 0) {
                 snprintf(s, sizeof(s), "%s|%s", param, val);
                 strcpy(fixlist, s);
                 getFixlist(fixlist);
@@ -861,9 +866,9 @@ int parseDevice(const char *flavour, const char *device_sect,
     snprintf(filename, sizeof(filename), "%s:%s", device, vendor);
     if (subvendor[0] != '\0') {
         strcat(filename, ":");
-        strcat(filename, subvendor);
-        strcat(filename, ":");
         strcat(filename, subdevice);
+        strcat(filename, ":");
+        strcat(filename, subvendor);
     }
 
     snprintf(bt, sizeof(bt), "%X", bus);
@@ -901,13 +906,13 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     fputs("NdisVersion|0x50001\n", f);
     fputs("Environment|1\n", f);
+    fprintf(f, "class_guid|%s\n", classguid);
+    fputs("NetworkAddress|XX:XX:XX:XX:XX:XX\n", f);
+    fprintf(f, "driver_version|%s,%s\n", providerstring, ver);
     strcpy(bustype, "BusType");
     getString(bustype);
     if (strcmp(bustype, "BusType") != 0)
         fprintf(f, "BusType|%s\n", bustype);
-    fprintf(f, "class_guid|%s\n", classguid);
-    fputs("mac_address|XX:XX:XX:XX:XX:XX\n", f);
-    fprintf(f, "driver_version|%s,%s\n", providerstring, ver);
     fputs("\n", f);
 
     // Split
@@ -1412,8 +1417,10 @@ int main(int argc, char **argv) {
     strcpy(param_fixlist[1].m, "IBSSGMode|2");
     strcpy(param_fixlist[2].n, "PrivacyMode|0");
     strcpy(param_fixlist[2].m, "PrivacyMode|2");
-    strcpy(param_fixlist[3].n, "AdhocGMode|1");
-    strcpy(param_fixlist[3].m, "AdhocGMode|0");
+    strcpy(param_fixlist[3].n, "MapRegisters|256");
+    strcpy(param_fixlist[3].m, "MapRegisters|64");
+    strcpy(param_fixlist[4].n, "AdhocGMode|1");
+    strcpy(param_fixlist[4].m, "AdhocGMode|0");
 
     /* main initialisation */
     int loc;
