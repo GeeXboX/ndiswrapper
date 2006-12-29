@@ -747,10 +747,10 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
             strcpy(p2, ps[3]);
             strcpy(p3, ps[4]);
             strcpy(p4, ps[5]);
-            stripquotes(substStr(trim(p1)));
-            stripquotes(substStr(trim(p2)));
-            stripquotes(substStr(trim(p3)));
-            stripquotes(substStr(trim(p4)));
+            substStr(stripquotes(trim(p1)));
+            substStr(stripquotes(trim(p2)));
+            substStr(stripquotes(trim(p3)));
+            substStr(stripquotes(trim(p4)));
             if (p1[0] != '\0') {
                 if (regex(p1, PS2, ps, ICASE)) {
                     strcpy(param_t, ps[1]);
