@@ -1199,9 +1199,6 @@ int loadinf(const char *filename) {
     }
 
     while (fgets(s, sizeof(s), f)) {
-        /* Convert from unicode */
-        //strcpy(s, regex(s, "s/\xff\xfe//")); // FIXME
-        //strcpy(s, regex(s, "s/\0//")); // FIXME
         res = 1;
         if (!nb_sections) {
             nb_sections++;
