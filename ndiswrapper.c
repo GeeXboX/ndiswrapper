@@ -774,7 +774,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
                     if (found == 2)
                         gotParam = 1;
                 }
-                else {
+                else if (strncasecmp(p1, "ndi", 3) || !strcasecmp(p1, "ndi")) {
                     strcpy(param, p2);
                     strcpy(val, p4);
                     gotParam = 1;
@@ -907,12 +907,12 @@ int parseDevice(const char *flavour, const char *device_sect,
     fputs("NdisVersion|0x50001\n", f);
     fputs("Environment|1\n", f);
     fprintf(f, "class_guid|%s\n", classguid);
-    fputs("NetworkAddress|XX:XX:XX:XX:XX:XX\n", f);
+    fputs("mac_address|XX:XX:XX:XX:XX:XX\n", f);
     fprintf(f, "driver_version|%s,%s\n", providerstring, ver);
     strcpy(bustype, "BusType");
     getString(bustype);
-    if (strcmp(bustype, "BusType") != 0)
-        fprintf(f, "BusType|%s\n", bustype);
+    fprintf(f, "BusType|%s\n", bustype);
+    fputs("SlotNumber|01\n", f);
     fputs("\n", f);
 
     // Split
