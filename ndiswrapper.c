@@ -1,10 +1,10 @@
 /*
  * Ndiswrapper manager, initially written for GeeXboX
- * Copyright (C) 2006 Mathieu Schroeter <mathieu.schroeter@gamesover.ch>
- *                    Andrew Calkin <calkina@geexbox.org>
+ * Copyright (C) 2006-2007 Mathieu Schroeter <mathieu.schroeter@gamesover.ch>
+ *                         Andrew Calkin <calkina@geexbox.org>
  *
- * Based on the original ndiswrapper-1.21 Perl script
- *  by Pontus Fuchs and Giridhar Pemmasani, 2005
+ * Based on the original ndiswrapper-1.21 to 1.42 Perl script
+ *  by Pontus Fuchs and Giridhar Pemmasani, 2005-2007
  *
  *
  * This program is free software; you can redistribute it and/or modify
