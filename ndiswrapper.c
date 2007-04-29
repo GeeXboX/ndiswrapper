@@ -586,15 +586,6 @@ void copy_file(char *file) {
         }
     trim(remComment(file));
 
-    /*
-    for (k = 0; k < nb_blacklist; k++) {
-        strcpy(lfile, file);
-        lc(lfile);
-        if (!strcmp(copy_blacklist[k], lfile))
-            nocopy = 1;
-    }
-    */
-
     strcpy(dir, file);
     finddir(dir);
     if (dir[0] != '\0')
