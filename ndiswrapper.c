@@ -408,7 +408,7 @@ char *lc(char *data) {
 char *trim(char *s) {
     char *ptr, *copy;
     copy = s;
-    
+
     ptr = strchr(s, '\0');
     while (ptr > s && (*(ptr-1) == ' ' || *(ptr-1) == '\t' || *(ptr-1) == '\r' || *(ptr-1) == '\n'))
         ptr--;
@@ -848,7 +848,7 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     copy_files = (char **)malloc(LINEBUFFER*sizeof(char*));
     memset(copy_files, 0, LINEBUFFER*sizeof(char*));
-    
+
     for (i = 0; i < dev->datalen; i++) {
         getKeyVal(dev->data[i], keyval);
         if (keyval[0][0] != '\0') {
