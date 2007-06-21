@@ -3,7 +3,7 @@
  * Copyright (C) 2006-2007 Mathieu Schroeter <mathieu.schroeter@gamesover.ch>
  *                         Andrew Calkin <calkina@geexbox.org>
  *
- * Based on the original ndiswrapper-1.21 to 1.42 Perl script
+ * Based on the original ndiswrapper-1.21 to 1.47 Perl script
  *  by Pontus Fuchs and Giridhar Pemmasani, 2005-2007
  *
  *
