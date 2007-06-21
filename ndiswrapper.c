@@ -114,6 +114,7 @@ struct DEF_FIXLIST param_fixlist[5];
 char driver_name[STRBUFFER];
 char instdir[STRBUFFER];
 char classguid[STRBUFFER];
+char sys_files[STRBUFFER] = "";
 int bus;
 
 
@@ -617,6 +618,8 @@ int copyfiles(const char *copy_name) {
     if (copy_name[0] == '@') {
         copy_ptr = strdup(copy_name+1);
         copy_file(copy_ptr);
+        if (!strstr(sys_files, lc(copy_ptr)) && strstr(copy_ptr, ".sys"))
+            snprintf(sys_files, sizeof(sys_files), "%s%s ", sys_files, copy_ptr);
         free(copy_ptr);
         return 1;
     }
@@ -648,8 +651,11 @@ int copyfiles(const char *copy_name) {
         l = k + 1;
         for (k = 0; k < l; k++) {
             trim(files[k]);
-            if (strlen(files[k]) > 0)
+            if (strlen(files[k]) > 0) {
                 copy_file(files[k]);
+                if (!strstr(sys_files, lc(files[k])) && strstr(files[k], ".sys"))
+                    snprintf(sys_files, sizeof(sys_files), "%s%s ", sys_files, files[k]);
+            }
             free(files[k]);
         }
     }
@@ -717,7 +723,7 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
 
 int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
     unsigned int i = 0;
-    int found = 0, gotParam = 0;
+    int found = 0, gotParam = 0, driver_desc = 0;
     char ps[6][STRBUFFER];
     char param[STRBUFFER], param_t[STRBUFFER];
     char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
@@ -778,6 +784,8 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
             }
 
             if (gotParam && strcmp(param, "") != 0) {
+                if (!strcmp(param, "DriverDesc"))
+                    driver_desc = 1;
                 snprintf(s, sizeof(s), "%s|%s", param, val);
                 strcpy(fixlist, s);
                 getFixlist(fixlist);
@@ -793,6 +801,12 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
             }
         }
     }
+
+    if (!driver_desc) {
+        strcpy(param_tab[*k], "DriverDesc|NDIS Network Adapter");
+        *k = *k + 1;
+    }
+
     return 1;
 }
 
@@ -888,24 +902,6 @@ int parseDevice(const char *flavour, const char *device_sect,
         return -1;
     }
 
-    strcpy(ver, "DriverVer");
-    getVersion(ver);
-    strcpy(provider, "Provider");
-    getVersion(provider);
-    strcpy(providerstring, provider);
-    stripquotes(substStr(trim(providerstring)));
-
-    fputs("NdisVersion|0x50001\n", f);
-    fputs("Environment|1\n", f);
-    fprintf(f, "class_guid|%s\n", classguid);
-    fputs("mac_address|XX:XX:XX:XX:XX:XX\n", f);
-    fprintf(f, "driver_version|%s,%s\n", providerstring, ver);
-    strcpy(bustype, "BusType");
-    getString(bustype);
-    fprintf(f, "BusType|%s\n", bustype);
-    fputs("SlotNumber|01\n", f);
-    fputs("\n", f);
-
     // Split
     i = 0;
     lines = (char **)malloc(LINEBUFFER*sizeof(char*));
@@ -924,10 +920,6 @@ int parseDevice(const char *flavour, const char *device_sect,
         addReg(lines[i], param_tab, &par_k);
         free(lines[i]);
     }
-    /* sort and unify before writing */
-    unisort(param_tab, &par_k);
-    for (i = 0; i < par_k; i++)
-        fprintf(f, "%s\n", param_tab[i]);
 
     for (k = 0; k < push; k++) {
         // Split
@@ -948,6 +940,31 @@ int parseDevice(const char *flavour, const char *device_sect,
             free(lines[i]);
         }
     }
+
+    fprintf(f, "sys_files|%s\n", sys_files);
+    strcpy(ver, "DriverVer");
+    getVersion(ver);
+    strcpy(provider, "Provider");
+    getVersion(provider);
+    strcpy(providerstring, provider);
+    stripquotes(substStr(trim(providerstring)));
+
+    fputs("NdisVersion|0x50001\n", f);
+    fputs("Environment|1\n", f);
+    fprintf(f, "class_guid|%s\n", classguid);
+    fprintf(f, "driver_version|%s,%s\n", providerstring, ver);
+    strcpy(bustype, "BusType");
+    getString(bustype);
+    fprintf(f, "BusType|%s\n", bustype);
+    fputs("SlotNumber|01\n", f);
+    fputs("NetCfgInstanceId|{28022A01-1234-5678-ABCDE-123813291A00}\n", f);
+    fputs("\n", f);
+
+    /* sort and unify before writing */
+    unisort(param_tab, &par_k);
+    for (i = 0; i < par_k; i++)
+        fprintf(f, "%s\n", param_tab[i]);
+
     fclose(f);
     free(copy_files);
     free(lines);
