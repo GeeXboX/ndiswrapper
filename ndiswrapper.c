@@ -100,7 +100,7 @@ unsigned int alt_install = 0;
 unsigned int nb_driver = 0;
 struct DEF_SECTION **sections;
 
-struct DEF_STRVER strings[STRBUFFER];
+struct DEF_STRVER strings[LINEBUFFER];
 struct DEF_STRVER version[STRBUFFER];
 struct DEF_STRVER fuzzlist[STRBUFFER];
 struct DEF_STRVER buslist[STRBUFFER];
