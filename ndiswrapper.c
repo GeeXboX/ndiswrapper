@@ -1111,6 +1111,7 @@ int parseMfr(void) {
                     }
                     free(flavours[k]);
                 }
+                free(flavours[0]);
             }
             if (!res)
                 res = parseVendor(flavour, section);
