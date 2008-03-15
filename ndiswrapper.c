@@ -630,7 +630,7 @@ int copyfiles(const char *copy_name) {
         return -1;
     }
 
-    files = (char **)malloc(LINEBUFFER*sizeof(char*));
+    files = malloc(LINEBUFFER*sizeof(char*));
     memset(files, 0, LINEBUFFER*sizeof(char*));
     for (i = 0; i < copy->datalen; i++) {
         if (copy->data[i][0] == '[')
@@ -851,7 +851,7 @@ int parseDevice(const char *flavour, const char *device_sect,
         return -1;
     }
 
-    copy_files = (char **)malloc(LINEBUFFER*sizeof(char*));
+    copy_files = malloc(LINEBUFFER*sizeof(char*));
     memset(copy_files, 0, LINEBUFFER*sizeof(char*));
 
     for (i = 0; i < dev->datalen; i++) {
@@ -904,7 +904,7 @@ int parseDevice(const char *flavour, const char *device_sect,
 
     // Split
     i = 0;
-    lines = (char **)malloc(LINEBUFFER*sizeof(char*));
+    lines = malloc(LINEBUFFER*sizeof(char*));
     memset(lines, 0, LINEBUFFER*sizeof(char*));
     if ((tmp = strtok(addreg, ",")) != NULL) {
         lines[i] = strdup(tmp);
@@ -1072,7 +1072,7 @@ int parseMfr(void) {
             flavour[0] = '\0';
             // Split
             k = 0;
-            flavours = (char **)malloc(LINEBUFFER*sizeof(char*));
+            flavours = malloc(LINEBUFFER*sizeof(char*));
             memset(flavours, 0, LINEBUFFER*sizeof(char*));
             if ((tmp = strtok(keyval[1], ",")) != NULL) {
                 flavours[k] = strdup(tmp);
@@ -1211,9 +1211,9 @@ int loadinf(const char *filename) {
         res = 1;
         if (!nb_sections) {
             nb_sections++;
-            sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
+            sections[nb_sections-1] = malloc(sizeof(struct DEF_SECTION));
             strcpy(sections[nb_sections-1]->name,"none");
-            sections[nb_sections-1]->data = (char**)malloc(LINEBUFFER*sizeof(char*));
+            sections[nb_sections-1]->data = malloc(LINEBUFFER*sizeof(char*));
             memset(sections[nb_sections-1]->data, 0, LINEBUFFER*sizeof(char*));
             sections[nb_sections-1]->datalen = 0;
         }
@@ -1221,10 +1221,10 @@ int loadinf(const char *filename) {
         rbracket = strchr(s,']');
         if (lbracket && rbracket) {
             nb_sections++;
-            sections[nb_sections-1] = (struct DEF_SECTION*)malloc(sizeof(struct DEF_SECTION));
+            sections[nb_sections-1] = malloc(sizeof(struct DEF_SECTION));
             strncpy(sections[nb_sections-1]->name, lbracket+1, rbracket-lbracket-1);
             sections[nb_sections-1]->name[rbracket-lbracket-1] = '\0';
-            sections[nb_sections-1]->data = (char**)malloc(LINEBUFFER*sizeof(char*));
+            sections[nb_sections-1]->data = malloc(LINEBUFFER*sizeof(char*));
             memset(sections[nb_sections-1]->data, 0, LINEBUFFER*sizeof(char*));
             sections[nb_sections-1]->datalen = 0;
         }
@@ -1347,7 +1347,7 @@ int install(const char *inf) {
         return retval;
     }
 
-    sections = (struct DEF_SECTION**)malloc(STRBUFFER * sizeof(struct DEF_SECTION*));
+    sections = malloc(STRBUFFER * sizeof(struct DEF_SECTION*));
     memset(sections, 0, STRBUFFER * sizeof(struct DEF_SECTION*));
     if(loadinf(inf)) {
         if ((dir = opendir(confdir)) != NULL)
