@@ -68,21 +68,21 @@
 #endif
 
 /* Use structure for replace Perl hash */
-struct DEF_SECTION {
+typedef struct def_section_s {
     char name[STRBUFFER];
     char **data;
     unsigned int datalen;
-};
+} def_section_t;
 
-struct DEF_STRVER {
+typedef struct def_strver_s {
     char key[STRBUFFER];
     char val[STRBUFFER];
-};
+} def_strver_t;
 
-struct DEF_FIXLIST {
+typedef struct def_fixlist_s {
     char n[20];
     char m[20];
-};
+} def_fixlist_t;
 
 static inline int my_mkdir(const char *path) {
 #ifdef _WIN32
@@ -98,18 +98,18 @@ char *confdir = CONFDIR;
 char alt_install_file[STRBUFFER];
 unsigned int alt_install = 0;
 unsigned int nb_driver = 0;
-struct DEF_SECTION **sections;
+def_section_t **sections;
 
-struct DEF_STRVER strings[LINEBUFFER];
-struct DEF_STRVER version[STRBUFFER];
-struct DEF_STRVER fuzzlist[STRBUFFER];
-struct DEF_STRVER buslist[STRBUFFER];
+def_strver_t strings[LINEBUFFER];
+def_strver_t version[STRBUFFER];
+def_strver_t fuzzlist[STRBUFFER];
+def_strver_t buslist[STRBUFFER];
 unsigned int nb_strings = 0;
 unsigned int nb_version = 0;
 unsigned int nb_fuzzlist = 0;
 unsigned int nb_buslist = 0;
 
-struct DEF_FIXLIST param_fixlist[5];
+def_fixlist_t param_fixlist[5];
 
 char driver_name[STRBUFFER];
 char instdir[STRBUFFER];
@@ -320,7 +320,7 @@ int regex(const char *str_request, const char *str_regex,
     return res;
 }
 
-struct DEF_SECTION *getSection(const char *needle) {
+def_section_t *getSection(const char *needle) {
     unsigned int i;
 
     for (i = 0; i < nb_sections; i++)
@@ -493,7 +493,7 @@ int finddir(char *file) {
     unsigned int i = 0;
     int res = -1;
     char sp[2][STRBUFFER], *ptr1, *ptr2;
-    struct DEF_SECTION *sourcedisksfiles = NULL;
+    def_section_t *sourcedisksfiles = NULL;
 
     sourcedisksfiles = getSection("sourcedisksfiles");
     if (!sourcedisksfiles) {
@@ -613,7 +613,7 @@ int copyfiles(const char *copy_name) {
     char *copy_ptr;
     char **files;
     char *tmp;
-    struct DEF_SECTION *copy = NULL;
+    def_section_t *copy = NULL;
 
     if (copy_name[0] == '@') {
         copy_ptr = strdup(copy_name+1);
@@ -729,7 +729,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
     char type[STRBUFFER], val[STRBUFFER], s[STRBUFFER];
     char p1[STRBUFFER], p2[STRBUFFER], p3[STRBUFFER], p4[STRBUFFER];
     char fixlist[STRBUFFER], sOld[STRBUFFER];
-    struct DEF_SECTION *reg = NULL;
+    def_section_t *reg = NULL;
 
     reg = getSection(reg_name);
     if (reg == NULL) {
@@ -822,7 +822,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     char filename[STRBUFFER], bt[STRBUFFER], file[STRBUFFER], bustype[STRBUFFER], alt_filename[STRBUFFER];
     char ver[STRBUFFER], provider[STRBUFFER], providerstring[STRBUFFER];
     char *tmp;
-    struct DEF_SECTION *dev = NULL;
+    def_section_t *dev = NULL;
     FILE *f;
 
     /* for RNDIS INF file (for USR5420), vendor section names device
@@ -1013,7 +1013,7 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     char section[STRBUFFER], id[STRBUFFER];
     char vendor[5], device[5];
     char subvendor[5], subdevice[5];
-    struct DEF_SECTION *vend = NULL;
+    def_section_t *vend = NULL;
 
     vend = getSection(vendor_name);
     if (vend == NULL) {
@@ -1052,7 +1052,7 @@ int parseMfr(void) {
     char section[STRBUFFER] = "";
     char flavour[STRBUFFER];
     char *tmp;
-    struct DEF_SECTION *manu = NULL;
+    def_section_t *manu = NULL;
 
     manu = getSection("manufacturer");
     if (!manu) {
@@ -1125,7 +1125,7 @@ int parseVersion(void) {
     unsigned int i = 0;
     char keyval[2][STRBUFFER];
     char *ptr1, *ptr2;
-    struct DEF_SECTION *s = NULL;
+    def_section_t *s = NULL;
 
     s = getSection("version");
     if (!s) {
@@ -1171,7 +1171,7 @@ int initStrings(void) {
     unsigned int i = 0;
     char keyval[2][STRBUFFER];
     char ps[STRBUFFER], *ptr1, *ptr2;
-    struct DEF_SECTION *s = NULL;
+    def_section_t *s = NULL;
 
     s = getSection("strings");
     if (s == NULL) {
@@ -1211,7 +1211,7 @@ int loadinf(const char *filename) {
         res = 1;
         if (!nb_sections) {
             nb_sections++;
-            sections[nb_sections-1] = malloc(sizeof(struct DEF_SECTION));
+            sections[nb_sections-1] = malloc(sizeof(def_section_t));
             strcpy(sections[nb_sections-1]->name,"none");
             sections[nb_sections-1]->data = malloc(LINEBUFFER*sizeof(char*));
             memset(sections[nb_sections-1]->data, 0, LINEBUFFER*sizeof(char*));
@@ -1221,7 +1221,7 @@ int loadinf(const char *filename) {
         rbracket = strchr(s,']');
         if (lbracket && rbracket) {
             nb_sections++;
-            sections[nb_sections-1] = malloc(sizeof(struct DEF_SECTION));
+            sections[nb_sections-1] = malloc(sizeof(def_section_t));
             strncpy(sections[nb_sections-1]->name, lbracket+1, rbracket-lbracket-1);
             sections[nb_sections-1]->name[rbracket-lbracket-1] = '\0';
             sections[nb_sections-1]->data = malloc(LINEBUFFER*sizeof(char*));
@@ -1347,8 +1347,8 @@ int install(const char *inf) {
         return retval;
     }
 
-    sections = malloc(STRBUFFER * sizeof(struct DEF_SECTION*));
-    memset(sections, 0, STRBUFFER * sizeof(struct DEF_SECTION*));
+    sections = malloc(STRBUFFER * sizeof(def_section_t*));
+    memset(sections, 0, STRBUFFER * sizeof(def_section_t*));
     if(loadinf(inf)) {
         if ((dir = opendir(confdir)) != NULL)
             closedir(dir);
