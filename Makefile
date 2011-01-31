@@ -3,6 +3,8 @@ DEBUG=yes
 CC? = gcc
 CFLAGS += -Wall -Wextra
 
+PREFIX ?= /usr
+
 SRC = ndiswrapper.c
 
 ifndef PROJ
@@ -34,3 +36,9 @@ distclean:
 	rm -f ndiswrapper ndiswrapper.exe
 
 .phony: distclean
+
+install: ndiswrapper
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp -P ndiswrapper $(DESTDIR)$(PREFIX)/bin
+
+.phony: install
