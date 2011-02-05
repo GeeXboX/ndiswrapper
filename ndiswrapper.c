@@ -93,29 +93,29 @@ static inline int my_mkdir(const char *path) {
 }
 
 /* global variables */
-unsigned int nb_sections = 0;
-char *confdir = CONFDIR;
-char alt_install_file[STRBUFFER];
-unsigned int alt_install = 0;
-unsigned int nb_driver = 0;
-def_section_t **sections;
+static unsigned int nb_sections = 0;
+static char *confdir = CONFDIR;
+static char alt_install_file[STRBUFFER];
+static unsigned int alt_install = 0;
+static unsigned int nb_driver = 0;
+static def_section_t **sections;
 
-def_strver_t strings[LINEBUFFER];
-def_strver_t version[STRBUFFER];
-def_strver_t fuzzlist[STRBUFFER];
-def_strver_t buslist[STRBUFFER];
-unsigned int nb_strings = 0;
-unsigned int nb_version = 0;
-unsigned int nb_fuzzlist = 0;
-unsigned int nb_buslist = 0;
+static def_strver_t strings[LINEBUFFER];
+static def_strver_t version[STRBUFFER];
+static def_strver_t fuzzlist[STRBUFFER];
+static def_strver_t buslist[STRBUFFER];
+static unsigned int nb_strings = 0;
+static unsigned int nb_version = 0;
+static unsigned int nb_fuzzlist = 0;
+static unsigned int nb_buslist = 0;
 
-def_fixlist_t param_fixlist[5];
+static def_fixlist_t param_fixlist[5];
 
-char driver_name[STRBUFFER];
-char instdir[STRBUFFER];
-char classguid[STRBUFFER];
-char sys_files[STRBUFFER] = "";
-int bus;
+static char driver_name[STRBUFFER];
+static char instdir[STRBUFFER];
+static char classguid[STRBUFFER];
+static char sys_files[STRBUFFER] = "";
+static int bus;
 
 
 /*
@@ -133,7 +133,7 @@ int bus;
  *
  */
 
-char *getString(char *s) {
+static char *getString(char *s) {
     unsigned int i = 0;
 
     do {
@@ -146,7 +146,7 @@ char *getString(char *s) {
     return s;
 }
 
-char *getVersion(char *s) {
+static char *getVersion(char *s) {
     unsigned int i = 0;
 
     do {
@@ -159,7 +159,7 @@ char *getVersion(char *s) {
     return s;
 }
 
-char *getFuzzlist(char *s) {
+static char *getFuzzlist(char *s) {
     unsigned int i = 0;
 
     do {
@@ -172,7 +172,7 @@ char *getFuzzlist(char *s) {
     return s;
 }
 
-char *getBuslist(char *s) {
+static char *getBuslist(char *s) {
     unsigned int i = 0;
 
     do {
@@ -185,7 +185,7 @@ char *getBuslist(char *s) {
     return s;
 }
 
-char *getFixlist(char *s) {
+static char *getFixlist(char *s) {
     unsigned int i = 0;
 
     do {
@@ -198,7 +198,7 @@ char *getFixlist(char *s) {
     return s;
 }
 
-void def_strings(const char *key, const char *val) {
+static void def_strings(const char *key, const char *val) {
     unsigned int i = 0;
 
     do {
@@ -216,7 +216,7 @@ void def_strings(const char *key, const char *val) {
     } while (i <= nb_strings && i < sizeof(strings)/sizeof(strings[0]));
 }
 
-void def_version(const char *key, const char *val) {
+static void def_version(const char *key, const char *val) {
     unsigned int i = 0;
 
     do {
@@ -234,7 +234,7 @@ void def_version(const char *key, const char *val) {
     } while (i <= nb_version && i < sizeof(version)/sizeof(version[0]));
 }
 
-void def_fuzzlist(const char *key, const char *val) {
+static void def_fuzzlist(const char *key, const char *val) {
     unsigned int i = 0;
 
     do {
@@ -252,7 +252,7 @@ void def_fuzzlist(const char *key, const char *val) {
     } while (i <= nb_fuzzlist && i < sizeof(fuzzlist)/sizeof(fuzzlist[0]));
 }
 
-void def_buslist(const char *key, const char *val) {
+static void def_buslist(const char *key, const char *val) {
     unsigned int i = 0;
 
     do {
@@ -280,7 +280,7 @@ void def_buslist(const char *key, const char *val) {
  *
  */
 
-int regex(const char *str_request, const char *str_regex,
+static int regex(const char *str_request, const char *str_regex,
           char rmatch[][STRBUFFER], int icase) {
     int err, match, start, end, res = 0;
     unsigned int i;
@@ -320,7 +320,7 @@ int regex(const char *str_request, const char *str_regex,
     return res;
 }
 
-def_section_t *getSection(const char *needle) {
+static def_section_t *getSection(const char *needle) {
     unsigned int i;
 
     for (i = 0; i < nb_sections; i++)
@@ -329,7 +329,7 @@ def_section_t *getSection(const char *needle) {
     return NULL;
 }
 
-void unisort(char tab[][STRBUFFER], unsigned int *last) {
+static void unisort(char tab[][STRBUFFER], unsigned int *last) {
     unsigned int i, j;
     int change = 1;
     char tmp[STRBUFFER];
@@ -354,7 +354,7 @@ void unisort(char tab[][STRBUFFER], unsigned int *last) {
     }
 }
 
-void usage(void) {
+static void usage(void) {
     printf("Usage: ndiswrapper OPTION [-o]\n\n");
     printf("Manage ndis drivers for ndiswrapper.\n");
     printf("-i inffile        Install driver described by 'inffile'\n");
@@ -390,7 +390,7 @@ void usage(void) {
  *
  */
 
-char *uc(char *data) {
+static char *uc(char *data) {
     int i;
 
     for (i = 0; data[i] != '\0'; i++)
@@ -398,7 +398,7 @@ char *uc(char *data) {
     return data;
 }
 
-char *lc(char *data) {
+static char *lc(char *data) {
     int i;
 
     for (i = 0; data[i] != '\0'; i++)
@@ -406,7 +406,7 @@ char *lc(char *data) {
     return data;
 }
 
-char *trim(char *s) {
+static char *trim(char *s) {
     char *ptr, *copy;
     copy = s;
 
@@ -424,7 +424,7 @@ char *trim(char *s) {
     return s;
 }
 
-char *stripquotes(char *s) {
+static char *stripquotes(char *s) {
     char *start, *end, *copy;
 
     start = strchr(s, '"');
@@ -440,7 +440,7 @@ char *stripquotes(char *s) {
     return s;
 }
 
-char *remComment(char *s) {
+static char *remComment(char *s) {
     char *comment;
     comment = strchr(s, ';');
     if (comment)
@@ -448,7 +448,7 @@ char *remComment(char *s) {
     return s;
 }
 
-char *substStr(char *s) {
+static char *substStr(char *s) {
     char *lbracket, *rbracket;
 
     lbracket = strchr(s,'%');
@@ -461,7 +461,7 @@ char *substStr(char *s) {
     return s;
 }
 
-void getKeyVal(const char *line, char tmp[2][STRBUFFER]) {
+static void getKeyVal(const char *line, char tmp[2][STRBUFFER]) {
     char *ptr;
     ptr = strchr(line, '=');
     if (ptr) {
@@ -489,7 +489,7 @@ void getKeyVal(const char *line, char tmp[2][STRBUFFER]) {
  *
  */
 
-int finddir(char *file) {
+static int finddir(char *file) {
     unsigned int i = 0;
     int res = -1;
     char sp[2][STRBUFFER], *ptr1, *ptr2;
@@ -524,7 +524,7 @@ int finddir(char *file) {
     return res;
 }
 
-int findfile(const char *dir, char *file) {
+static int findfile(const char *dir, char *file) {
     char path[STRBUFFER];
     DIR *d;
     struct dirent *dp;
@@ -548,7 +548,7 @@ int findfile(const char *dir, char *file) {
     return -1;
 }
 
-int copy(const char *file_src, const char *file_dst, int mod) {
+static int copy(const char *file_src, const char *file_dst, int mod) {
     int infile = 0;
     int outfile = 1;
     int nbytes;
@@ -571,7 +571,7 @@ int copy(const char *file_src, const char *file_dst, int mod) {
     return 1;
 }
 
-void copy_file(char *file) {
+static void copy_file(char *file) {
     int nocopy = 0;
     char *ptr;
     char newname[STRBUFFER];
@@ -608,7 +608,7 @@ void copy_file(char *file) {
     }
 }
 
-int copyfiles(const char *copy_name) {
+static int copyfiles(const char *copy_name) {
     unsigned int i = 0, k, l;
     char *copy_ptr;
     char **files;
@@ -663,7 +663,7 @@ int copyfiles(const char *copy_name) {
     return 0;
 }
 
-int file_exists(const char *file) {
+static int file_exists(const char *file) {
     struct stat st;
 
     if (stat(file, &st) < 0)
@@ -671,7 +671,7 @@ int file_exists(const char *file) {
     return 1;
 }
 
-int rmtree(const char *dir) {
+static int rmtree(const char *dir) {
     char file[STRBUFFER];
     DIR *d;
     struct dirent *dp;
@@ -701,7 +701,7 @@ int rmtree(const char *dir) {
  *
  */
 
-void addPCIFuzzEntry(const char *vendor, const char *device,
+static void addPCIFuzzEntry(const char *vendor, const char *device,
                      const char *subvendor, const char *subdevice,
                      const char *bt) {
     char s[STRBUFFER], s2[STRBUFFER];
@@ -721,7 +721,7 @@ void addPCIFuzzEntry(const char *vendor, const char *device,
     }
 }
 
-int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
+static int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
     unsigned int i = 0;
     int found = 0, gotParam = 0, driver_desc = 0;
     char ps[6][STRBUFFER];
@@ -810,7 +810,7 @@ int addReg(const char *reg_name, char param_tab[][STRBUFFER], unsigned int *k) {
     return 1;
 }
 
-int parseDevice(const char *flavour, const char *device_sect,
+static int parseDevice(const char *flavour, const char *device_sect,
                 const char *device, const char *vendor,
                 const char *subvendor, const char *subdevice) {
     unsigned int i = 0, j, k, push = 0, par_k = 0;
@@ -971,7 +971,7 @@ int parseDevice(const char *flavour, const char *device_sect,
     return 1;
 }
 
-int parseID(const char *id, int *bt, char *vendor,
+static int parseID(const char *id, int *bt, char *vendor,
             char *device, char *subvendor, char *subdevice) {
     char *ptr1, *ptr2, *ptr3;
     ptr1 = strstr(id, "PCI\\VEN_");
@@ -1006,7 +1006,7 @@ int parseID(const char *id, int *bt, char *vendor,
     return 1;
 }
 
-int parseVendor(const char *flavour, const char *vendor_name) {
+static int parseVendor(const char *flavour, const char *vendor_name) {
     unsigned int i = 0;
     int bt;
     char keyval[2][STRBUFFER];
@@ -1037,7 +1037,7 @@ int parseVendor(const char *flavour, const char *vendor_name) {
     return 0;
 }
 
-int parseMfr(void) {
+static int parseMfr(void) {
     /* Examples:
        Vendor
        Vendor,ME,NT,NT.5.1
@@ -1121,7 +1121,7 @@ int parseMfr(void) {
     return res;
 }
 
-int parseVersion(void) {
+static int parseVersion(void) {
     unsigned int i = 0;
     char keyval[2][STRBUFFER];
     char *ptr1, *ptr2;
@@ -1167,7 +1167,7 @@ int parseVersion(void) {
  *
  */
 
-int initStrings(void) {
+static int initStrings(void) {
     unsigned int i = 0;
     char keyval[2][STRBUFFER];
     char ps[STRBUFFER], *ptr1, *ptr2;
@@ -1192,7 +1192,7 @@ int initStrings(void) {
     return 1;
 }
 
-int loadinf(const char *filename) {
+static int loadinf(const char *filename) {
     char s[STRBUFFER];
     char *lbracket, *rbracket;
     FILE *f;
@@ -1238,7 +1238,7 @@ int loadinf(const char *filename) {
     return res;
 }
 
-int isInstalled(const char *name) {
+static int isInstalled(const char *name) {
     int installed = 0;
     char f_path[STRBUFFER];
     DIR *d;
@@ -1262,7 +1262,7 @@ int isInstalled(const char *name) {
     return installed;
 }
 
-int processPCIFuzz(void) {
+static int processPCIFuzz(void) {
     unsigned int i;
     int ret = 1;
     char bl[STRBUFFER];
@@ -1313,7 +1313,7 @@ int processPCIFuzz(void) {
     return ret;
 }
 
-int install(const char *inf) {
+static int install(const char *inf) {
     char install_dir[STRBUFFER];
     char dst[STRBUFFER];
     DIR *dir;
@@ -1391,7 +1391,7 @@ int install(const char *inf) {
  *
  */
 
-int remove(const char *name) {
+static int remove(const char *name) {
     char driver[STRBUFFER];
 
     if (!isInstalled(name)) {
