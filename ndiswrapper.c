@@ -597,7 +597,7 @@ static void copy_file(char *file) {
 
     if (realname[0] != '\0') {
         strcpy(newname, realname);
-        if (dir)
+        if (dir[0] != '\0')
             snprintf(realname, sizeof(realname), "%s/%s", dir, newname);
         lc(newname);
         if (!nocopy) {
