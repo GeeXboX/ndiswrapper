@@ -1391,7 +1391,7 @@ static int install(const char *inf) {
  *
  */
 
-static int remove(const char *name) {
+static int remove_driver(const char *name) {
     char driver[STRBUFFER];
 
     if (!isInstalled(name)) {
@@ -1456,7 +1456,7 @@ int main(int argc, char **argv) {
         res = devid_driver(argv[2], argv[3]);
 */
     else if (!strcmp(argv[1], "-e") && argc < 6 && argc > 2)
-        res = remove(argv[2]);
+        res = remove_driver(argv[2]);
 /*
     else if (!strcmp(argv[1], "-l") && argc == 2)
         res = list();
